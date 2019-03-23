@@ -716,6 +716,7 @@ int ecall_enclave_start (const char ** arguments, const char ** environments)
     ms.ms_environments = environments;
     ms.ms_sec_info = PAL_SEC();
     EDEBUG(ECALL_ENCLAVE_START, &ms);
+    printf("1\n");
     return sgx_ecall(ECALL_ENCLAVE_START, &ms);
 }
 

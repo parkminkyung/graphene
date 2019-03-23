@@ -1305,6 +1305,7 @@ void * stack_before_call __attribute_unused = NULL;
 void start_execution (const char * first_argument, const char ** arguments,
                       const char ** environs)
 {
+    printf("6\n");
     /* First we will try to run all the preloaded libraries which come with
        entry points */
     if (exec_map) {
@@ -1370,15 +1371,35 @@ void start_execution (const char * first_argument, const char ** arguments,
             pal_state.tail_startup_time += _DkSystemTimeQuery() - before_tail;
 #endif
 
+    printf("7\n");
     struct link_map * l = loaded_maps;
     /* run entry point in reverse order */
     for (; l->l_next ; l = l->l_next);
+    printf("8\n");
     for (; l ; l = l->l_prev)
-        if (l->l_type == OBJECT_PRELOAD && l->l_entry)
+        if (l->l_type == OBJECT_PRELOAD && l->l_entry) // object_preload:libraries?
             CALL_ENTRY(l, cookies);
 
+    printf("9\n");
+    printf("9\n");
+    printf("9\n");
+    printf("9\n");
+    printf("9\n");
     if (exec_map)
         CALL_ENTRY(exec_map, cookies);
 
+    printf("0\n");
+    printf("0\n");
+    printf("0\n");
+    printf("0\n");
+    printf("0\n");
+    printf("0\n");
     _DkThreadExit();
+    printf("1\n");
+    printf("1\n");
+    printf("1\n");
+    printf("1\n");
+    printf("1\n");
+    printf("1\n");
+    printf("1\n");
 }

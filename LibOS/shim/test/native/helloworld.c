@@ -2,11 +2,15 @@
 /* vim: set ts=4 sw=4 et tw=78 fo=cqt wm=0: */
 
 /* a simple helloworld test */
-
+#include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <arpa/inet.h>
 
 int main(int argc, char ** argv)
 {
-    printf("Hello world (%s)!\n", argv[0]);
+    printf("Hello world 2 (%s)!\n", argv[0]);
+
     return 0;
 }

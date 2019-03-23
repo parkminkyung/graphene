@@ -327,6 +327,9 @@ long __shim_send_rpc (long, long, long);
 long __shim_recv_rpc (long, long, long);
 long __shim_checkpoint(long);
 
+// mkpark
+long __shim_send_request (void);
+
 /* syscall implementation */
 size_t shim_do_read (int fd, void * buf, size_t count);
 size_t shim_do_write (int fd, const void * buf, size_t count);
@@ -510,6 +513,7 @@ size_t shim_do_send_rpc (pid_t pid, const void * buf, size_t size);
 size_t shim_do_recv_rpc (pid_t * pid, void * buf, size_t size);
 int shim_do_checkpoint(const char * filename);
 
+size_t shim_do_send_request(void);
 #endif /* ! IN_SHIM */
 
 /* syscall wrappers */
@@ -880,4 +884,5 @@ size_t shim_send_rpc (pid_t pid, const void * buf, size_t size);
 size_t shim_recv_rpc (pid_t * pid, void * buf, size_t size);
 int shim_checkpoint(const char * filename);
 
+size_t test_send_request(void);
 #endif /* _SHIM_TABLE_H_ */

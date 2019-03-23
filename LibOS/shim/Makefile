@@ -1,6 +1,6 @@
 MAKEFLAGS += --check-symlink-times
 
-SYS ?= $(shell gcc -dumpmachine)
+SYS ?= $(shell gcc -dumpmachine) #x86_64-linux-gnu
 export SYS
 
 targets = all debug clean

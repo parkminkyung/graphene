@@ -8,6 +8,7 @@
 #include "sgx_enclave.h"
 #include "debugger/sgx_gdb.h"
 
+#include "hex.h"
 #include <asm/fcntl.h>
 #include <asm/socket.h>
 #include <linux/fs.h>
@@ -140,7 +141,8 @@ int scan_enclave_binary (int fd, unsigned long * base, unsigned long * size,
 
 static
 int load_enclave_binary (sgx_arch_secs_t * secs, int fd,
-                         unsigned long base, unsigned long prot)
+                         unsigned long base, unsigned long prot, unsigned long
+                         skip_eextend)
 {
     int ret = 0;
 
@@ -164,17 +166,17 @@ int load_enclave_binary (sgx_arch_secs_t * secs, int fd,
     int nloadcmds = 0;
 
     for (ph = phdr ; ph < &phdr[header->e_phnum] ; ph++)
-        if (ph->p_type == PT_LOAD) {
+        if (ph->p_type == PT_LOAD) { // loadable program segment
             if (nloadcmds == 16)
                 return -EINVAL;
 
             c = &loadcmds[nloadcmds++];
             c->mapstart = ALLOC_ALIGNDOWN(ph->p_vaddr);
             c->mapend = ALLOC_ALIGNUP(ph->p_vaddr + ph->p_filesz);
-            c->datastart = ph->p_vaddr;
-            c->dataend = ph->p_vaddr + ph->p_filesz;
-            c->allocend = ph->p_vaddr + ph->p_memsz;
-            c->mapoff = ALLOC_ALIGNDOWN(ph->p_offset);
+            c->datastart = ph->p_vaddr; // virtual address
+            c->dataend = ph->p_vaddr + ph->p_filesz; // segment size in file
+            c->allocend = ph->p_vaddr + ph->p_memsz; // segment size in memory
+            c->mapoff = ALLOC_ALIGNDOWN(ph->p_offset); // segment file offset 
             c->prot = (ph->p_flags & PF_R ? PROT_READ  : 0)|
                       (ph->p_flags & PF_W ? PROT_WRITE : 0)|
                       (ph->p_flags & PF_X ? PROT_EXEC  : 0)|prot;
@@ -205,9 +207,10 @@ int load_enclave_binary (sgx_arch_secs_t * secs, int fd,
             if (zeropage > zero)
                 memset(addr + zero - c->mapstart, 0, zeropage - zero);
 
+            // mkpark: 0->skip_eextend not to include exec to eextend
             ret = add_pages_to_enclave(secs, (void *) base + c->mapstart, addr,
                                        c->mapend - c->mapstart,
-                                       SGX_PAGE_REG, c->prot, 0,
+                                       SGX_PAGE_REG, c->prot, skip_eextend,
                                        (c->prot & PROT_EXEC) ? "code" : "data");
 
             INLINE_SYSCALL(munmap, 2, addr, c->mapend - c->mapstart);
@@ -251,6 +254,7 @@ int initialize_enclave (struct pal_enclave * enclave)
         } ret;                                                      \
     })
 
+    // libpal
     enclave_image = INLINE_SYSCALL(open, 3, ENCLAVE_FILENAME, O_RDONLY, 0);
     if (IS_ERR(enclave_image)) {
         SGX_DBG(DBG_E, "cannot find %s\n", ENCLAVE_FILENAME);
@@ -329,10 +333,11 @@ int initialize_enclave (struct pal_enclave * enclave)
         _a->prot = _prot; _a->type = _type; _a;                         \
     })
 
+    // mkpark 
     struct mem_area * manifest_area =
-        set_area("manifest", false, false, enclave->manifest,
+        set_area("manifest", true, false, enclave->manifest,
                  0, ALLOC_ALIGNUP(manifest_size),
-                 PROT_READ, SGX_PAGE_REG);
+                 PROT_READ, SGX_PAGE_REG); 
     struct mem_area * ssa_area =
         set_area("ssa", true, false, -1, 0,
                  enclave->thread_num * enclave->ssaframesize * SSAFRAMENUM,
@@ -359,7 +364,7 @@ int initialize_enclave (struct pal_enclave * enclave)
 
     struct mem_area * exec_area = NULL;
     if (enclave->exec != -1) {
-        exec_area = set_area("exec", false, true, enclave->exec, 0, 0,
+        exec_area = set_area("exec", true, true, enclave->exec, 0, 0,
                              PROT_WRITE, SGX_PAGE_REG);
         TRY(scan_enclave_binary,
             enclave->exec, &exec_area->addr, &exec_area->size, NULL);
@@ -403,7 +408,8 @@ int initialize_enclave (struct pal_enclave * enclave)
     for (int i = 0 ; i < area_num ; i++) {
         if (areas[i].fd != -1 && areas[i].is_binary) {
             TRY(load_enclave_binary,
-                &enclave_secs, areas[i].fd, areas[i].addr, areas[i].prot);
+                &enclave_secs, areas[i].fd, areas[i].addr, areas[i].prot,
+                areas[i].skip_eextend); // mkpark
             continue;
         }
 
@@ -664,7 +670,7 @@ static int load_enclave (struct pal_enclave * enclave,
     pal_sec->start_time = tv.tv_sec * 1000000UL + tv.tv_usec;
 #endif
 
-    ret = open_gsgx();
+    ret = open_gsgx(); // open gsgx and isgx dev driver
     if (ret < 0)
         return ret;
 
@@ -699,6 +705,7 @@ static int load_enclave (struct pal_enclave * enclave,
          return -EINVAL;
     }
 
+    // read manifest and put it in the config
     ret = load_manifest(enclave->manifest, &enclave->config);
     if (ret < 0) {
         SGX_DBG(DBG_E, "invalid manifest: %s\n", manifest_uri);
@@ -744,6 +751,7 @@ static int load_enclave (struct pal_enclave * enclave,
         return -EINVAL;
     }
 
+    // uri: sigfile
     const char * uri = resolve_uri(cfgbuf, &errstring);
     if (!uri) {
         SGX_DBG(DBG_E, "%s: %s\n", errstring, cfgbuf);
@@ -761,6 +769,7 @@ static int load_enclave (struct pal_enclave * enclave,
         return -EINVAL;
     }
 
+    // uri: token file 
     uri = alloc_concat(uri, strlen(uri) - 4, ".token", -1);
     enclave->token = INLINE_SYSCALL(open, 3, uri + 5, O_RDONLY|O_CLOEXEC, 0);
     if (IS_ERR(enclave->token)) {
@@ -857,6 +866,7 @@ int main (int argc, const char ** argv, const char ** envp)
     }
 
     if (!is_child) {
+        printf("not child!\n");
         /* occupy PROC_INIT_FD so no one will use it */
         INLINE_SYSCALL(dup2, 2, 0, PROC_INIT_FD);
 
@@ -869,6 +879,7 @@ int main (int argc, const char ** argv, const char ** envp)
             exec_uri = alloc_concat("file:", -1, argv[0], -1);
         }
     } else {
+        printf("is child!\n");
         exec_uri = alloc_concat(enclave->pal_sec.exec_name, -1, NULL, -1);
     }
 
@@ -933,6 +944,7 @@ int main (int argc, const char ** argv, const char ** envp)
     else
         SGX_DBG(DBG_I, "executable file not found\n");
 
+    // 여기까지는 거의 파일 세팅인데...
     return load_enclave(enclave, manifest_uri, exec_uri, argv, envp, exec_uri_inferred);
 
 usage:

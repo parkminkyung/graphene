@@ -426,6 +426,7 @@ has_manifest:
         unsigned long before_load_exec = _DkSystemTimeQuery();
 #endif
 
+        // mkpark: both init exec_map
         if (exec_loaded_addr) {
             ret = add_elf_object(exec_loaded_addr, exec_handle, OBJECT_EXEC);
         } else {
@@ -476,8 +477,10 @@ has_manifest:
                                         pal_state.process_create_time;
 #endif
 
+    printf("5\n");
     /* Now we will start the execution */
     start_execution(first_argument, arguments, environments);
+    printf("5\n");
 
     /* We wish we will never reached here */
     init_fail(PAL_ERROR_DENIED, "unexpected termination");

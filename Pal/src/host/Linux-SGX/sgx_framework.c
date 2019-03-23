@@ -18,14 +18,14 @@ void * zero_page;
 
 int open_gsgx(void)
 {
-    gsgx_device = INLINE_SYSCALL(open, 3, GSGX_FILE, O_RDWR, 0);
+    gsgx_device = INLINE_SYSCALL(open, 3, GSGX_FILE, O_RDWR, 0); // /dev/gsgx
     if (IS_ERR(gsgx_device)) {
         SGX_DBG(DBG_E, "Cannot open device " GSGX_FILE ". Please make sure the"
                 " \'graphene_sgx\' kernel module is loaded.\n");
         return -ERRNO(gsgx_device);
     }
 
-    isgx_device = INLINE_SYSCALL(open, 3, ISGX_FILE, O_RDWR, 0);
+    isgx_device = INLINE_SYSCALL(open, 3, ISGX_FILE, O_RDWR, 0); // /dev/isgx
     if (IS_ERR(isgx_device)) {
         SGX_DBG(DBG_E, "Cannot open device " ISGX_FILE ". Please make sure the"
                 " Intel SGX kernel module is loaded.\n");
@@ -144,6 +144,8 @@ int create_enclave(sgx_arch_secs_t * secs,
         secs->size <<= 1;
     secs->ssaframesize = get_ssaframesize(token->attributes.xfrm) / pagesize;
     secs->miscselect = token->miscselect_mask;
+    memcpy(secs->mrenclave, token->mrenclave, sizeof(sgx_arch_hash_t));
+    // mkpark added
     memcpy(&secs->attributes, &token->attributes,
            sizeof(sgx_arch_attributes_t));
     /* Do not initialize secs->mrsigner and secs->mrenclave here as they are
@@ -158,6 +160,7 @@ int create_enclave(sgx_arch_secs_t * secs,
         secs->baseaddr = ENCLAVE_HIGH_ADDRESS;
     }
 
+    // isgx_device -> baseaddr
     uint64_t addr = INLINE_SYSCALL(mmap, 6, secs->baseaddr, secs->size,
                                    PROT_READ|PROT_WRITE|PROT_EXEC,
                                    flags|MAP_FIXED, isgx_device, 0);
@@ -175,6 +178,7 @@ int create_enclave(sgx_arch_secs_t * secs,
     secs->baseaddr = addr;
 
 #if SDK_DRIVER_VERSION >= KERNEL_VERSION(1, 8, 0)
+    // here
     struct sgx_enclave_create param = {
         .src = (uint64_t) secs,
     };

@@ -1187,3 +1187,8 @@ DEFINE_SHIM_SYSCALL (recv_rpc, 3, shim_do_recv_rpc, size_t, pid_t *, pid,
 
 DEFINE_SHIM_SYSCALL (checkpoint, 1, shim_do_checkpoint, int,
                      const char *, filename)
+
+/* mkpark: new calls */
+DEFINE_SHIM_SYSCALL (send_request, 0, shim_do_send_request, size_t)
+
+

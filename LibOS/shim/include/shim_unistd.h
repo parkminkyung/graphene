@@ -73,4 +73,6 @@ struct sigcp {
 
 #include "shim_unistd_defs.h"
 
+size_t send_request(void);
+#define __NR_send_request         (LIBOS_SYSCALL_BASE + 9)
 #endif /* _SHIM_UNISTD_H_ */

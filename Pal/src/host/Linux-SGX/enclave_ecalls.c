@@ -45,6 +45,7 @@ int handle_ecall (long ecall_index, void * ecall_args, void * exit_target,
 
             if (!ms) return -PAL_ERROR_INVAL;
 
+    printf("2\n");
             pal_linux_main(ms->ms_arguments, ms->ms_environments,
                            ms->ms_sec_info);
             break;
@@ -55,6 +56,7 @@ int handle_ecall (long ecall_index, void * ecall_args, void * exit_target,
             break;
     }
 
+    printf("2\n");
     ocall_exit(0);
     return 0;
 }

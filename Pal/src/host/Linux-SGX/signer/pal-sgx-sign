@@ -215,7 +215,7 @@ def get_checksum(file):
 def get_trusted_files(manifest, args):
     targets = dict()
 
-    if 'exec' in args:
+    if 'exec' in args: # mkpark
         targets['exec'] = (args['exec'], resolve_uri(args['exec']))
 
     if 'loader.preload' in manifest:
@@ -434,7 +434,7 @@ def generate_measurement(attr, areas):
         else:
             print >>sys.stderr, "    %016x-%016lx [%s:%s] %s" % (addr, addr + size, type, prot, desc)
 
-    def load_file(digest, f, offset, addr, filesize, memsize, desc, flags):
+    def load_file(digest, f, offset, addr, filesize, memsize, desc, flags, area):
         f_addr = rounddown(offset)
         m_addr = rounddown(addr)
         f_size = roundup(offset + filesize) - f_addr
@@ -448,6 +448,9 @@ def generate_measurement(attr, areas):
             do_eadd(digest, pg, flags)
 
             if (pg >= m_addr + f_size):
+                continue
+
+            if (desc == "manifest" or area.desc == "exec"): #mkpark
                 continue
 
             for er in range(pg, pg + PAGESIZE, 256):
@@ -498,15 +501,17 @@ def generate_measurement(attr, areas):
                             flags = flags | PAGEINFO_X
 
                         if flags & PAGEINFO_X:
+                            print area.desc
                             desc = 'code'
                         else:
+                            print area.desc
                             desc = 'data'
                         load_file(mrenclave, f, offset, baseaddr + addr,
-                                  filesize, memsize, desc, flags)
+                                  filesize, memsize, desc, flags, area)
                 else:
                     load_file(mrenclave, f, 0, area.addr,
                               os.stat(area.file).st_size, area.size,
-                              area.desc, area.flags)
+                              area.desc, area.flags, area)
         else:
             for a in range(area.addr, area.addr + area.size, PAGESIZE):
                 do_eadd(mrenclave, a, area.flags)
@@ -532,7 +537,7 @@ def generate_sigstruct(attr, args, mrenclave):
     fields['miscmask']  = ( 904, "4s",   attr['miscs'])
     fields['attrs']     = ( 928, "8s8s", attr['flags'], attr['xfrms'])
     fields['attrmask']  = ( 944, "8s8s", attr['flags'], attr['xfrms'])
-    fields['mrencalve'] = ( 960, "32s",  mrenclave)
+    fields['mrencalve'] = ( 960, "32s",  mrenclave) # different
     fields['isvprodid'] = (1024, "<H",   attr['isvprodid'])
     fields['isvsvn']    = (1026, "<H",   attr['isvsvn'])
 
@@ -585,10 +590,10 @@ def generate_sigstruct(attr, args, mrenclave):
 
     fields['modulus']   = ( 128, "384s", modulus)
     fields['exponent']  = ( 512, "<L",   3)
-    fields['signature'] = ( 516, "384s", signature)
+    fields['signature'] = ( 516, "384s", signature) #different
 
-    fields['q1']        = (1040, "384s", q1)
-    fields['q2']        = (1424, "384s", q2)
+    fields['q1']        = (1040, "384s", q1) #different
+    fields['q2']        = (1424, "384s", q2) #different
 
     buffer = bytearray(1808)
 
@@ -744,7 +749,7 @@ if __name__ == "__main__":
     output_manifest(args['output'], manifest, manifest_layout)
 
     memory_areas = [
-            MemoryArea('manifest', file=args['output'],
+           MemoryArea('manifest', file=args['output'],
                        flags=PAGEINFO_R|PAGEINFO_REG)
             ] + memory_areas
 

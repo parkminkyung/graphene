@@ -352,4 +352,7 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     (shim_fp) __shim_send_rpc,          /* 308 */
     (shim_fp) __shim_recv_rpc,          /* 309 */
     (shim_fp) __shim_checkpoint,        /* 310 */
+    
+// mkpark
+    (shim_fp) __shim_send_request,
 };

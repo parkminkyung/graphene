@@ -24,4 +24,14 @@ long sandbox_current(void)
 {
 	return INLINE_SYSCALL (sandbox_current, 0);
 }
+
+#endif
+
+
+#ifdef __NR_send_request
+size_t send_request(void)
+{
+	return INLINE_SYSCALL (send_request, 0);
+}
+
 #endif

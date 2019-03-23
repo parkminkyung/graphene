@@ -170,6 +170,7 @@ void pal_linux_main(const char ** arguments, const char ** environments,
     /* now let's mark our enclave as initialized */
     pal_enclave_state.enclave_flags |= PAL_ENCLAVE_INITIALIZED;
 
+    printf("3.1\n");
     /* create executable handle */
     PAL_HANDLE manifest, exec = NULL;
 
@@ -191,11 +192,13 @@ void pal_linux_main(const char ** arguments, const char ** environments,
     root_config->malloc = malloc;
     root_config->free = free;
 
+    printf("3.2\n");
     const char * errstring = NULL;
     if ((rv = read_config(root_config, loader_filter, &errstring)) < 0) {
         SGX_DBG(DBG_E, "Can't read manifest: %s, error code %d\n", errstring, rv);
         ocall_exit(rv);
     }
+    printf("3.3\n");
 
     pal_state.root_config = root_config;
     __pal_control.manifest_preload.start = (PAL_PTR) pal_sec.manifest_addr;
@@ -218,10 +221,12 @@ void pal_linux_main(const char ** arguments, const char ** environments,
         enclave_base + GET_ENCLAVE_TLS(tcs_offset);
     SET_ENCLAVE_TLS(thread, (__pal_control.first_thread = first_thread));
 
+    printf("4\n");
     /* call main function */
     pal_main(pal_sec.instance_id, manifest, exec,
              pal_sec.exec_addr, parent, first_thread,
              arguments, environments);
+    printf("4\n");
 }
 
 /* the following code is borrowed from CPUID */
