@@ -205,6 +205,14 @@ struct shim_sock_handle {
         int     optlen;
         char    optval[];
     } * pending_options;
+
+    // mkpark
+    struct shim_tls_options {
+        WOLFSSL_CTX *ctx;
+        WOLFSSL_METHOD *method;
+        WOLFSSL *ssl;
+
+    } * tls_options;
 };
 
 struct shim_dirent {
