@@ -113,17 +113,7 @@
     #include <signal.h>
 #endif
 
-#ifdef USE_WINDOWS_API
-    #ifdef WOLFSSL_GAME_BUILD
-        #include "system/xtl.h"
-    #else
-        #if defined(_WIN32_WCE) || defined(WIN32_LEAN_AND_MEAN)
-            /* On WinCE winsock2.h must be included before windows.h */
-            #include <winsock2.h>
-        #endif
-        #include <windows.h>
-    #endif
-#elif defined(THREADX)
+#ifdef  defined(THREADX)
     #ifndef SINGLE_THREADED
         #include "tx_api.h"
     #endif
@@ -3666,6 +3656,7 @@ WOLFSSL_LOCAL int ReceiveData(WOLFSSL*, byte*, int, int);
 WOLFSSL_LOCAL int SendFinished(WOLFSSL*);
 WOLFSSL_LOCAL int SendAlert(WOLFSSL*, int, int);
 WOLFSSL_LOCAL int ProcessReply(WOLFSSL*);
+WOLFSSL_LOCAL int ProcessReply2(struct shim_handle *hdl);
 
 WOLFSSL_LOCAL int SetCipherSpecs(WOLFSSL*);
 WOLFSSL_LOCAL int MakeMasterSecret(WOLFSSL*);

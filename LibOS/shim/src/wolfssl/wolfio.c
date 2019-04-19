@@ -99,7 +99,8 @@ static INLINE int LastError(void)
 #else
 //    return errno;
 #endif
-		return 0; // mkpark
+		// TODO fix it
+		return 0;
 }
 
 #endif /* USE_WOLFSSL_IO || HAVE_HTTP_CLIENT */
@@ -185,6 +186,7 @@ int EmbedReceive(WOLFSSL *ssl, char *buf, int sz, void *ctx)
  */
 int EmbedSend(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 {
+    WOLFSSL_ENTER("EmbedSend()\n");
     int sd = *(int*)ctx;
     int sent;
 
@@ -192,6 +194,7 @@ int EmbedSend(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     if (sent < 0) {
         int err = LastError();
         WOLFSSL_MSG("Embed Send error");
+				debug("error = %d\n", sent);
 
         if (err == SOCKET_EWOULDBLOCK || err == SOCKET_EAGAIN) {
             WOLFSSL_MSG("\tWould Block");
@@ -574,6 +577,7 @@ int wolfIO_Recv(SOCKET_T sd, char *buf, int sz, int rdFlags)
 
 int wolfIO_Send(SOCKET_T sd, char *buf, int sz, int wrFlags)
 {
+	WOLFSSL_ENTER("wolfIO_Send()\n");
     int sent;
 
     sent = (int)SEND_FUNCTION(sd, buf, sz, wrFlags);

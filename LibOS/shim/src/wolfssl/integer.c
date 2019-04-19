@@ -72,6 +72,8 @@
     #endif
 #endif
 
+#include "logging.h"
+
 /* reverse an array, used for radix code */
 static void
 bn_reverse (unsigned char *s, int len)
@@ -391,6 +393,7 @@ int mp_copy (mp_int * a, mp_int * b)
 /* grow as required */
 int mp_grow (mp_int * a, int size)
 {
+	WOLFSSL_ENTER("mp_grow()\n");
   int     i;
   mp_digit *tmp;
 
@@ -408,6 +411,7 @@ int mp_grow (mp_int * a, int size)
     tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * size, NULL,
                                                            DYNAMIC_TYPE_BIGINT);
     if (tmp == NULL) {
+			WOLFSSL_ENTER("mp_grow NULL\n");
       /* reallocation failed but "a" is still valid [can be freed] */
       return MP_MEM;
     }
@@ -1653,20 +1657,25 @@ int s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 {
   int     olduse, res, min_b, max_a;
 
+	WOLFSSL_LEAVE("s_mp_sub 1.0", res);
   /* find sizes */
   min_b = b->used;
   max_a = a->used;
 
+	debug("c->alloc : %d, max_a: %d\n", c->alloc, max_a);
   /* init result */
   if (c->alloc < max_a) {
+	WOLFSSL_LEAVE("s_mp_sub 2.0", res);
     if ((res = mp_grow (c, max_a)) != MP_OKAY) {
       return res;
     }
   }
 
   /* sanity check on destination */
-  if (c->dp == NULL)
+  if (c->dp == NULL){
+	WOLFSSL_LEAVE("c->dp == NULL", MP_VAL);
      return MP_VAL;
+	}
 
   olduse = c->used;
   c->used = max_a;
@@ -1729,29 +1738,35 @@ int mp_sub (mp_int * a, mp_int * b, mp_int * c)
   sb = b->sign;
 
   if (sa != sb) {
+	WOLFSSL_LEAVE("mp_sub 2.0", res);
     /* subtract a negative from a positive, OR */
     /* subtract a positive from a negative. */
     /* In either case, ADD their magnitudes, */
     /* and use the sign of the first number. */
     c->sign = sa;
     res = s_mp_add (a, b, c);
+	WOLFSSL_LEAVE("mp_sub 1.0", res);
   } else {
+	WOLFSSL_LEAVE("mp_sub 2.0", res);
     /* subtract a positive from a positive, OR */
     /* subtract a negative from a negative. */
     /* First, take the difference between their */
     /* magnitudes, then... */
     if (mp_cmp_mag (a, b) != MP_LT) {
+	WOLFSSL_LEAVE("mp_sub 3.0", res);
       /* Copy the sign from the first */
       c->sign = sa;
       /* The first has a larger or equal magnitude */
       res = s_mp_sub (a, b, c);
     } else {
+	WOLFSSL_LEAVE("mp_sub 4.0", res);
       /* The result has the *opposite* sign from */
       /* the first number. */
       c->sign = (sa == MP_ZPOS) ? MP_NEG : MP_ZPOS;
       /* The second has a larger magnitude */
       res = s_mp_sub (b, a, c);
     }
+	WOLFSSL_LEAVE("mp_sub 5.0", res);
   }
   return res;
 }

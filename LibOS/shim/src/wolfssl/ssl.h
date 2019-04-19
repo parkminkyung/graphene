@@ -25,8 +25,6 @@
 
 #ifndef WOLFSSL_SSL_H
 #define WOLFSSL_SSL_H
-
-
 /* for users not using preprocessor flags*/
 #include "settings.h"
 #include "version.h"
@@ -451,6 +449,7 @@ WOLFSSL_API int  wolfSSL_get_using_nonblock(WOLFSSL*);
 WOLFSSL_API int  wolfSSL_connect(WOLFSSL*);
 WOLFSSL_API int  wolfSSL_write(WOLFSSL*, const void*, int);
 WOLFSSL_API int  wolfSSL_read(WOLFSSL*, void*, int);
+
 WOLFSSL_API int  wolfSSL_peek(WOLFSSL*, void*, int);
 WOLFSSL_API int  wolfSSL_accept(WOLFSSL*);
 #ifdef WOLFSSL_TLS13

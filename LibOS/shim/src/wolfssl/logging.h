@@ -32,6 +32,7 @@
     extern "C" {
 #endif
 
+#include <shim_internal.h>
 
 enum  CYA_Log_Levels {
     ERROR_LOG = 0,
@@ -72,6 +73,7 @@ WOLFSSL_API int wolfSSL_SetLoggingCb(wolfSSL_Logging_cb log_function);
 
     /* a is prepended to m and b is appended, creating a log msg a + m + b */
     #define WOLFSSL_LOG_CAT(a, m, b) #a " " m " "  #b
+				alksjdf
 
     void WOLFSSL_ENTER(const char* msg);
     void WOLFSSL_LEAVE(const char* msg, int ret);
@@ -83,11 +85,11 @@ WOLFSSL_API int wolfSSL_SetLoggingCb(wolfSSL_Logging_cb log_function);
 
 #else /* DEBUG_WOLFSSL   */
 
-    #define WOLFSSL_ENTER(m)
-    #define WOLFSSL_LEAVE(m, r)
-    #define WOLFSSL_STUB(m)
+    #define WOLFSSL_ENTER(m) // debug("enter: "m"\n")
+    #define WOLFSSL_LEAVE(m, r) // debug("leave: "m" returned %d\n", r)
+    #define WOLFSSL_STUB(m) // debug("stub: " m"\n")
 
-    #define WOLFSSL_MSG(m)
+    #define WOLFSSL_MSG(m) // debug("msg: " m"\n")
     #define WOLFSSL_BUFFER(b, l)
 
 #endif /* DEBUG_WOLFSSL  */

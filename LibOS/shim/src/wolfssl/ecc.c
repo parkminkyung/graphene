@@ -1714,7 +1714,7 @@ int ecc_projective_dbl_point(ecc_point *P, ecc_point *R, mp_int* a,
 
       /* T2 = X - T1 */
       if (err == MP_OKAY)
-          err = mp_sub(x, &t1, &t2);
+          err = mp_sub(x, &t1, &t2); // mkpark: here
       if (err == MP_OKAY) {
           if (mp_isneg(&t2))
               err = mp_add(&t2, modulus, &t2);
@@ -1981,7 +1981,7 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R,
    #define M_POINTS 3
 #endif
 
-   ecc_point     *tG, *M[M_POINTS];
+   ecc_point     *tG, *M[M_POINTS],*mt;
    int           i, err;
    mp_int        mu;
    mp_digit      mp;
@@ -2020,7 +2020,10 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R,
 
    /* make a copy of G in case R==G */
    tG = wc_ecc_new_point_h(heap);
+   mt = wc_ecc_new_point_h(heap);
    if (tG == NULL)
+       err = MEMORY_E;
+   if (mt == NULL)
        err = MEMORY_E;
 
    /* tG = G  and convert to montgomery */
@@ -2048,11 +2051,11 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R,
    /* calc the M tab, which holds kG for k==8..15 */
    /* M[0] == 8G */
    if (err == MP_OKAY)
-       err = ecc_projective_dbl_point(tG, M[0], a, modulus, mp);
+       err = ecc_projective_dbl_point(tG, M[0], a, modulus, mp); // here
    if (err == MP_OKAY)
-       err = ecc_projective_dbl_point(M[0], M[0], a, modulus, mp);
+       err = ecc_projective_dbl_point(M[0], mt, a, modulus, mp);
    if (err == MP_OKAY)
-       err = ecc_projective_dbl_point(M[0], M[0], a, modulus, mp);
+       err = ecc_projective_dbl_point(mt, M[0], a, modulus, mp);
 
    /* now find (8+k)G for k=1..7 */
    if (err == MP_OKAY)
@@ -3072,6 +3075,7 @@ static int wc_ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
 
 #ifdef WOLFSSL_HAVE_SP_ECC
 #ifndef WOLFSSL_SP_NO_256
+		aslkdjfl
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SECP256R1) {
         if (err == MP_OKAY)
             err = sp_ecc_mulmod_base_256(&key->k, pub, 1, key->heap);
@@ -3145,8 +3149,6 @@ static int wc_ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
  */
 int wc_ecc_make_pub(ecc_key* key, ecc_point* pubOut)
 {
-    WOLFSSL_ENTER("wc_ecc_make_pub");
-
     return wc_ecc_make_pub_ex(key, NULL, pubOut);
 }
 
@@ -3169,6 +3171,7 @@ int wc_ecc_make_key_ex(WC_RNG* rng, int keysize, ecc_key* key, int curve_id)
     if (err != 0) {
         return err;
     }
+
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_ECC)
     if (key->asyncDev.marker == WOLFSSL_ASYNC_MARKER_ECC) {
@@ -3307,6 +3310,7 @@ static void wc_ecc_dump_oids(void)
  */
 int wc_ecc_make_key(WC_RNG* rng, int keysize, ecc_key* key)
 {
+    WOLFSSL_ENTER("wc_ecc_make_key");
     return wc_ecc_make_key_ex(rng, keysize, key, ECC_CURVE_DEF);
 }
 

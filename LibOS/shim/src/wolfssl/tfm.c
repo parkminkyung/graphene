@@ -48,7 +48,7 @@
 
 #include "random.h"
 #include "tfm.h"
-#include <wolfcrypt/src/asm.c>  /* will define asm MACROS or C ones */
+#include "asm.c"  /* will define asm MACROS or C ones */
 #include "wolfmath.h" /* common functions */
 
 #if defined(FREESCALE_LTC_TFM)

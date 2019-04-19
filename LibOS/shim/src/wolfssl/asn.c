@@ -1440,6 +1440,7 @@ int GetObjectId(const byte* input, word32* inOutIdx, word32* oid,
     }
 #endif /* NO_VERIFY_OID */
 
+    WOLFSSL_LEAVE("GetObjectId()", 0);
     return ret;
 }
 
@@ -3634,7 +3635,7 @@ int ValidateDate(const byte* date, byte format, int dateType)
     (void)tmpTime;
 #endif
 
-    ltime =  shim_times(0);// mkpark XTIME(0);
+    ltime = 0; // shim_times(0);// mkpark XTIME(0);
 
 #ifdef WOLFSSL_BEFORE_DATE_CLOCK_SKEW
     if (dateType == BEFORE) {
@@ -3703,7 +3704,7 @@ int wc_GetTime(void* timePtr, word32 timeSize)
         return BUFFER_E;
     }
 
-    *ltime = shim_times(0);// mkpark XTIME(0);
+    *ltime = 0; // shim_times(0);// mkpark XTIME(0);
 
     return 0;
 }

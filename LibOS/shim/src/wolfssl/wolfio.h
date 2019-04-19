@@ -243,8 +243,8 @@
     #define RECV_FUNCTION recv
 #else
 #include <shim_table.h> //mkpark
-    #define SEND_FUNCTION(a,b,c,d) shim_do_sendmsg(a,b,c) // mkpark
-    #define RECV_FUNCTION(a,b,c,d) shim_do_recvmsg(a,b,c) // mkpark
+    #define SEND_FUNCTION(a,b,c,d) shim_do_write_handshake(a,b,c) // mkpark
+    #define RECV_FUNCTION(a,b,c,d) shim_do_read_handshake(a,b,c) // mkpark
     #if !defined(HAVE_SOCKADDR) && !defined(WOLFSSL_NO_SOCK)
         #define HAVE_SOCKADDR
     #endif

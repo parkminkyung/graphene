@@ -25,6 +25,7 @@
     #include <config.h>
 #endif
 
+#include <shim_internal.h>
 #include <api.h>
 #include "settings.h"
 
@@ -8801,10 +8802,8 @@ int TLSX_Parse(WOLFSSL* ssl, byte* input, word16 length, byte msgType,
 
     WOLFSSL_METHOD* wolfTLSv1_2_server_method_ex(void* heap)
     {
-        WOLFSSL_METHOD* method =
-                              (WOLFSSL_METHOD*) malloc (sizeof(WOLFSSL_METHOD));
-                                                    // , heap, DYNAMIC_TYPE_METHOD);
-        (void)heap;
+        WOLFSSL_METHOD* method = (WOLFSSL_METHOD*)XMALLOC (sizeof(WOLFSSL_METHOD) ,heap, DYNAMIC_TYPE_METHOD);
+      
         if (method) {
             // InitSSL_Method(method, MakeTLSv1_2());
 				    ProtocolVersion pv;

@@ -132,6 +132,7 @@ void wolfSSL_Free(void *ptr)
     }
 }
 
+
 #ifdef WOLFSSL_DEBUG_MEMORY
 void* wolfSSL_Realloc(void *ptr, size_t size, const char* func, unsigned int line)
 #else
@@ -148,12 +149,9 @@ void* wolfSSL_Realloc(void *ptr, size_t size)
     #endif
     }
     else {
-       //  res = realloc(ptr, size);
-				debug("error for realloc\n");	
+				res = realloc(ptr, size);
     }
-
-		return -1;
-    // return res;
+    return res;
 }
 #endif /* WOLFSSL_STATIC_MEMORY */
 
@@ -537,11 +535,12 @@ void* wolfSSL_Malloc(size_t size, void* heap, int type)
             }
         #else
         #ifndef WOLFSSL_NO_MALLOC
+						a;klsdf
             res = malloc(size);
         #else
-            WOLFSSL_MSG("No heap hint found to use and no malloc");
+            debug("No heap hint found to use and no malloc");
             #ifdef WOLFSSL_DEBUG_MEMORY
-            printf("ERROR: at %s:%d\n", func, line);
+            debug("ERROR: at %s:%d\n", func, line);
             #endif
         #endif /* WOLFSSL_NO_MALLOC */
         #endif /* WOLFSSL_HEAP_TEST */

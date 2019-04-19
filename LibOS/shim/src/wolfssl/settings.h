@@ -161,6 +161,8 @@ extern "C" {
 
 	/* Uncomment next line if building for using XILINX */
 	/* #define WOLFSSL_XILINX */
+// #define WOLFSSL_SGX
+// #define WOLFSSL_SGX_ATTESTATION
 
 #include "visibility.h"
 
@@ -189,6 +191,7 @@ extern "C" {
 
 #undef  HAVE_ECC
 #define HAVE_ECC
+#define ALT_ECC_SIZE
 
 #undef NO_FILESYSTEM 
 #define NO_FILESYSTEM 
@@ -214,6 +217,9 @@ extern "C" {
 #undef SINGLE_THREADED      
 #define SINGLE_THREADED      
 
+// #define WOLFSSL_NO_MALLOC
+// #define WOLFSSL_STATIC_MEMORY
+// #define USE_FAST_MATH // for static memory
 
 	/* make sure old RNG name is used with CTaoCrypt FIPS */
 #ifdef HAVE_FIPS
@@ -1647,6 +1653,8 @@ kk #define XMALLOC(s, h, type)  pvPortMalloc((s))
 
 #undef  HAVE_ECC
 #define HAVE_ECC
+#define ALT_ECC_SIZE
+#define USE_FAST_MATH
 
 #undef NO_FILESYSTEM 
 #define NO_FILESYSTEM 
@@ -1755,7 +1763,7 @@ static inline char* XSTRSTR(const char* X, const char* Y)
 	while (*X != '\0')
 	{
 		if ((*X == *Y) && compare(X, Y))
-			return X;
+			return (char *) X;
 		X++;
 	}
 

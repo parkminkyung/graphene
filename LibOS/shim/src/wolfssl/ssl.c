@@ -29,6 +29,7 @@
 #ifndef WOLFCRYPT_ONLY
 
 #ifdef HAVE_ERRNO_H
+asdf
     #include <errno.h>
 #endif
 
@@ -43,6 +44,8 @@
 #endif
 
 #include <api.h>
+#include <shim_handle.h>
+#include <shim_internal.h>
 
 
 #ifndef WOLFSSL_ALLOW_NO_SUITES
@@ -270,7 +273,7 @@ WOLFSSL_CTX* wolfSSL_CTX_new_ex(WOLFSSL_METHOD* method, void* heap)
     if (method == NULL)
         return ctx;
 
-    ctx = (WOLFSSL_CTX*) malloc(sizeof(WOLFSSL_CTX)); //, heap, DYNAMIC_TYPE_CTX);
+    ctx = (WOLFSSL_CTX*)XMALLOC(sizeof(WOLFSSL_CTX), heap, DYNAMIC_TYPE_CTX);
     if (ctx) {
         if (InitSSL_Ctx(ctx, method, heap) < 0) {
             WOLFSSL_MSG("Init CTX failed");
@@ -1602,6 +1605,343 @@ int wolfSSL_GetDhKey_Sz(WOLFSSL* ssl)
 }
 
 #endif /* !NO_DH */
+
+int EmbedSend2(struct shim_handle *hdl, char *buf, int sz, void *ctx)
+{
+    WOLFSSL_ENTER("EmbedSend()\n");
+    int sd = *(int*)ctx;
+    int sent;
+
+		// wolfIO_send = shim_do_write
+    sent = DkStreamWrite(hdl->pal_handle, 0, sz, (void *)buf, NULL);
+		// wolfIO_Send(sd, buf, sz);
+    if (sent < 0) {
+        WOLFSSL_MSG("Embed Send error");
+
+#ifdef HAVE_ERRNO_H
+        int err = LastError();
+        if (err == SOCKET_EWOULDBLOCK || err == SOCKET_EAGAIN) {
+            WOLFSSL_MSG("\tWould Block");
+            return WOLFSSL_CBIO_ERR_WANT_WRITE;
+        }
+        else if (err == SOCKET_ECONNRESET) {
+            WOLFSSL_MSG("\tConnection reset");
+            return WOLFSSL_CBIO_ERR_CONN_RST;
+        }
+        else if (err == SOCKET_EINTR) {
+            WOLFSSL_MSG("\tSocket interrupted");
+            return WOLFSSL_CBIO_ERR_ISR;
+        }
+        else if (err == SOCKET_EPIPE) {
+            WOLFSSL_MSG("\tSocket EPIPE");
+            return WOLFSSL_CBIO_ERR_CONN_CLOSE;
+        }
+        else {
+            WOLFSSL_MSG("\tGeneral error");
+            return WOLFSSL_CBIO_ERR_GENERAL;
+        }
+#endif
+    }
+
+    return sent;
+}
+
+
+int SendBuffered2(struct shim_handle *hdl, WOLFSSL* ssl)
+{
+	WOLFSSL_ENTER("SendBuffered2()\n");
+
+#ifdef WOLFSSL_DEBUG_TLS
+    if (ssl->buffers.outputBuffer.idx == 0) {
+        WOLFSSL_MSG("Data to send");
+        WOLFSSL_BUFFER(ssl->buffers.outputBuffer.buffer,
+                       ssl->buffers.outputBuffer.length);
+    }
+#endif
+
+    while (ssl->buffers.outputBuffer.length > 0) {
+        WOLFSSL_MSG("CBIO before\n");
+        int sent = EmbedSend2(hdl, 
+                                      (char*)ssl->buffers.outputBuffer.buffer +
+                                      ssl->buffers.outputBuffer.idx,
+                                      (int)ssl->buffers.outputBuffer.length,
+                                      ssl->IOCB_WriteCtx);
+        WOLFSSL_MSG("CBIO after\n");
+        if (sent < 0) {
+            switch (sent) {
+
+                case WOLFSSL_CBIO_ERR_WANT_WRITE:        /* would block */
+                    return WANT_WRITE;
+
+                case WOLFSSL_CBIO_ERR_CONN_RST:          /* connection reset */
+                    ssl->options.connReset = 1;
+                    break;
+
+                case WOLFSSL_CBIO_ERR_ISR:               /* interrupt */
+                    /* see if we got our timeout */
+                    #ifdef WOLFSSL_CALLBACKS
+                        if (ssl->toInfoOn) {
+                            struct itimerval timeout;
+                            getitimer(ITIMER_REAL, &timeout);
+                            if (timeout.it_value.tv_sec == 0 &&
+                                                timeout.it_value.tv_usec == 0) {
+                                XSTRNCPY(ssl->timeoutInfo.timeoutName,
+                                        "send() timeout", MAX_TIMEOUT_NAME_SZ);
+                                WOLFSSL_MSG("Got our timeout");
+                                return WANT_WRITE;
+                            }
+                        }
+                    #endif
+                    continue;
+
+                case WOLFSSL_CBIO_ERR_CONN_CLOSE: /* epipe / conn closed */
+                    ssl->options.connReset = 1;  /* treat same as reset */
+                    break;
+
+                default:
+                    return SOCKET_ERROR_E;
+            }
+
+            return SOCKET_ERROR_E;
+        }
+
+        if (sent > (int)ssl->buffers.outputBuffer.length) {
+            WOLFSSL_MSG("SendBuffered() out of bounds read");
+            return SEND_OOB_READ_E;
+        }
+
+        ssl->buffers.outputBuffer.idx += sent;
+        ssl->buffers.outputBuffer.length -= sent;
+    }
+
+    ssl->buffers.outputBuffer.idx = 0;
+
+    if (ssl->buffers.outputBuffer.dynamicFlag)
+        ShrinkOutputBuffer(ssl);
+
+    return 0;
+}
+
+
+int wolfSSL_write_sock(struct shim_handle *hdl, const void* data, int sz)
+{
+	struct shim_sock_handle *sock = &hdl->info.sock;
+	WOLFSSL *ssl = sock->tls_options.ssl;
+
+    if (ssl == NULL || data == NULL || sz < 0)
+        return BAD_FUNC_ARG;
+
+#ifdef HAVE_ERRNO_H
+    errno = 0;
+#endif
+    int sent = 0,  /* plainText size */
+        sendSz,
+        ret,
+        dtlsExtra = 0;
+
+    if (ssl->error == WANT_WRITE || ssl->error == WC_PENDING_E)
+        ssl->error = 0;
+
+    if (ssl->options.handShakeState != HANDSHAKE_DONE) {
+        int err;
+        WOLFSSL_MSG("handshake not complete, trying to finish");
+        if ( (err = wolfSSL_negotiate(ssl)) != WOLFSSL_SUCCESS) {
+            /* if async would block return WANT_WRITE */
+            if (ssl->error == WC_PENDING_E) {
+                return WOLFSSL_CBIO_ERR_WANT_WRITE;
+            }
+            return  err;
+        }
+    }
+
+    /* last time system socket output buffer was full, try again to send */
+    if (ssl->buffers.outputBuffer.length > 0) {
+        WOLFSSL_MSG("output buffer was full, trying to send again");
+        if ( (ssl->error = SendBuffered2(hdl, ssl)) < 0) {
+            WOLFSSL_ERROR(ssl->error);
+            if (ssl->error == SOCKET_ERROR_E && ssl->options.connReset)
+                return 0;     /* peer reset */
+            return ssl->error;
+        }
+        else {
+            /* advance sent to previous sent + plain size just sent */
+            sent = ssl->buffers.prevSent + ssl->buffers.plainSz;
+            WOLFSSL_MSG("sent write buffered data");
+
+            if (sent > sz) {
+                WOLFSSL_MSG("error: write() after WANT_WRITE with short size");
+                return ssl->error = BAD_FUNC_ARG;
+            }
+        }
+    }
+  for (;;) {
+        int   len;
+        byte* out;
+        byte* sendBuffer = (byte*)data + sent;  /* may switch on comp */
+        int   buffSz;                           /* may switch on comp */
+        int   outputSz;
+#ifdef HAVE_LIBZ
+        byte  comp[MAX_RECORD_SIZE + MAX_COMP_EXTRA];
+#endif
+
+        if (sent == sz) break;
+
+        len = min(sz - sent, OUTPUT_RECORD_SIZE);
+#ifdef HAVE_MAX_FRAGMENT
+        len = min(len, ssl->max_fragment);
+#endif
+
+        buffSz = len;
+
+        /* check for available size */
+        outputSz = len + COMP_EXTRA + dtlsExtra + MAX_MSG_EXTRA;
+        if ((ret = CheckAvailableSize(ssl, outputSz)) != 0)
+            return ssl->error = ret;
+
+        /* get output buffer */
+        out = ssl->buffers.outputBuffer.buffer +
+              ssl->buffers.outputBuffer.length;
+
+#ifdef HAVE_LIBZ
+        if (ssl->options.usingCompression) {
+            buffSz = myCompress(ssl, sendBuffer, buffSz, comp, sizeof(comp));
+            if (buffSz < 0) {
+                return buffSz;
+            }
+            sendBuffer = comp;
+        }
+#endif
+        if (!ssl->options.tls1_3) {
+            sendSz = BuildMessage(ssl, out, outputSz, sendBuffer, buffSz,
+                                  application_data, 0, 0, 1);
+        }
+        else {
+
+            sendSz = BUFFER_ERROR;
+        }
+        if (sendSz < 0) {
+        #ifdef WOLFSSL_ASYNC_CRYPT
+            if (sendSz == WC_PENDING_E)
+                ssl->error = sendSz;
+        #endif
+            return BUILD_MSG_ERROR;
+        }
+
+        ssl->buffers.outputBuffer.length += sendSz;
+
+        if ( (ret = SendBuffered2(hdl, ssl)) < 0) {
+            WOLFSSL_ERROR(ret);
+            /* store for next call if WANT_WRITE or user embedSend() that
+               doesn't present like WANT_WRITE */
+            ssl->buffers.plainSz  = len;
+            ssl->buffers.prevSent = sent;
+            if (ret == SOCKET_ERROR_E && ssl->options.connReset)
+                return 0;  /* peer reset */
+            return ssl->error = ret;
+        }
+
+        sent += len;
+
+        /* only one message per attempt */
+        if (ssl->options.partialWrite == 1) {
+            WOLFSSL_MSG("Paritial Write on, only sending one record");
+            break;
+        }
+    }
+
+    return sent;
+}
+
+
+
+int wolfSSL_read_sock(struct shim_handle *hdl, void* output, int sz)
+{
+		struct shim_sock_handle *sock = &hdl->info.sock;
+		WOLFSSL *ssl = sock->tls_options.ssl;
+
+    WOLFSSL_ENTER("wolfSSL_read_sock");
+
+    if (ssl == NULL || output == NULL || sz < 0)
+        return BAD_FUNC_ARG;
+
+#ifdef HAVE_ERRNO_H
+        errno = 0;
+#endif
+
+    sz = min(sz, OUTPUT_RECORD_SIZE);
+#ifdef HAVE_MAX_FRAGMENT
+    sz = min(sz, ssl->max_fragment);
+#endif
+    int size;
+
+    /* reset error state */
+    if (ssl->error == WANT_READ || ssl->error == WC_PENDING_E) {
+        ssl->error = 0;
+    }
+
+    if (ssl->error != 0 && ssl->error != WANT_WRITE) {
+        WOLFSSL_MSG("User calling wolfSSL_read in error state, not allowed");
+        return ssl->error;
+    }
+
+    if (ssl->options.handShakeState != HANDSHAKE_DONE) {
+        int err;
+        WOLFSSL_MSG("Handshake not complete, trying to finish");
+        if ( (err = wolfSSL_negotiate(ssl)) != WOLFSSL_SUCCESS) {
+        #ifdef WOLFSSL_ASYNC_CRYPT
+            /* if async would block return WANT_WRITE */
+            if (ssl->error == WC_PENDING_E) {
+                return WOLFSSL_CBIO_ERR_WANT_READ;
+            }
+        #endif
+            return  err;
+        }
+    }
+
+    while (ssl->buffers.clearOutputBuffer.length == 0) {
+        if ( (ssl->error = ProcessReply2(hdl)) < 0) {
+            WOLFSSL_ERROR(ssl->error);
+            if (ssl->error == ZERO_RETURN) {
+                WOLFSSL_MSG("Zero return, no more data coming");
+                return 0;         /* no more data coming */
+            }
+            if (ssl->error == SOCKET_ERROR_E) {
+                if (ssl->options.connReset || ssl->options.isClosed) {
+                    WOLFSSL_MSG("Peer reset or closed, connection done");
+                    ssl->error = SOCKET_PEER_CLOSED_E;
+                    WOLFSSL_ERROR(ssl->error);
+                    return 0;     /* peer reset or closed */
+                }
+            }
+            return ssl->error;
+        }
+
+    }
+
+    if (sz < (int)ssl->buffers.clearOutputBuffer.length)
+        size = sz;
+    else
+        size = ssl->buffers.clearOutputBuffer.length;
+
+    XMEMCPY(output, ssl->buffers.clearOutputBuffer.buffer, size);
+
+    if (false == 0) {
+        ssl->buffers.clearOutputBuffer.length -= size;
+        ssl->buffers.clearOutputBuffer.buffer += size;
+    }
+
+    if (ssl->buffers.clearOutputBuffer.length == 0 &&
+                                           ssl->buffers.inputBuffer.dynamicFlag)
+       ShrinkInputBuffer(ssl, NO_FORCED_FREE);
+
+    WOLFSSL_LEAVE("wolfSSL_read_sock()", size);
+
+    if (size < 0)
+        return WOLFSSL_FATAL_ERROR;
+    else
+        return size;
+}
+
 
 
 int wolfSSL_write(WOLFSSL* ssl, const void* data, int sz)
