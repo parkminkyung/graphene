@@ -47,12 +47,15 @@ struct shim_ipc_info {
 
 enum { PID_NS, SYSV_NS, TOTAL_NS };
 
+enum process_state { CREATED, NON_CONFINED, READY, CONFINED };
+
 struct shim_process {
     IDTYPE              vmid;
     LOCKTYPE            lock;
     int                 exit_code;
     struct shim_ipc_info * self, * parent;
     struct shim_ipc_info * ns[TOTAL_NS];
+//    enum process_state state; 
 };
 
 extern struct shim_process cur_process;

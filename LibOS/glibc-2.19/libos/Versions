@@ -4,7 +4,10 @@ liblibos {
     checkpoint;
 
     # sandbox.c
-    sandbox_create; sandbox_attach; sandbox_current; send_request;
+    sandbox_create; sandbox_attach; sandbox_current;
+
+    # advmsg.c
+    send_request; extend_request; send_response; send_user_data; read_nonuser_data; gather_response; read_user_data;      
 
     # msgpersist.c
     msgpersist;

@@ -37,6 +37,8 @@ ifeq ($(WERROR),1)
 CFLAGS += -Werror
 endif
 
+CFLAGS += -DWOLFSSL_SGX_ATTESTATION -DWOLFSSL_ALWAYS_VERIFY_CB -DKEEP_PEER_CERT -DNO_INLINE
+
 files_to_build = libsysdb.a libsysdb.so libsysdb_debug.so
 files_to_install = $(addprefix $(RUNTIME_DIR)/,$(files_to_build))
 
@@ -53,7 +55,9 @@ objs	= $(addprefix bookkeep/shim_,handle vma thread signal) \
 	  $(addprefix shim_,init table syscalls checkpoint random malloc \
 	  async parser debug) syscallas start \
 	  $(patsubst %.c,%,$(wildcard sys/*.c)) \
-	  $(patsubst %.c,%,$(wildcard msg/*.c))
+	  $(patsubst %.c,%,$(wildcard msg/*.c)) \
+	  $(patsubst %.c,%,$(wildcard db/*.c)) \
+	  $(patsubst %.c,%,$(wildcard wolfssl/*.c))
 graphene_lib = .lib/graphene-lib.a
 pal_lib = $(RUNTIME_DIR)/libpal-$(PAL_HOST).so
 headers = ../include/*.h ../../../Pal/lib/*.h ../../../Pal/include/pal/*.h

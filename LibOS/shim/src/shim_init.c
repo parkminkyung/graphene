@@ -30,6 +30,7 @@
 #include <shim_vma.h>
 #include <shim_checkpoint.h>
 #include <shim_fs.h>
+#include <shim_db.h>
 #include <shim_ipc.h>
 #include <shim_profile.h>
 
@@ -48,6 +49,12 @@ unsigned long allocmask;
 /* The following constants will help matching glibc version with compatible
    SHIM libraries */
 #include "glibc-version.h"
+
+// mkpark
+#ifndef ERANGE
+# define ERANGE 34
+#endif
+
 
 const unsigned int glibc_version = GLIBC_VERSION;
 
@@ -666,6 +673,7 @@ int shim_init (int argc, void * args, void ** return_stack)
 {
     debug_handle = PAL_CB(debug_stream);
     cur_process.vmid = (IDTYPE) PAL_CB(process_id);
+    // cur_process.state = CREATED;
 
     /* create the initial TCB, shim can not be run without a tcb */
     __libc_tcb_t tcb;
@@ -710,15 +718,27 @@ int shim_init (int argc, void * args, void ** return_stack)
 #endif
 
     BEGIN_PROFILE_INTERVAL();
+    debug("init_randgen\n");
     RUN_INIT(init_randgen);
+    debug("init_vma    \n");
     RUN_INIT(init_vma);
+    debug("init_slab   \n");
     RUN_INIT(init_slab);
+    debug("init_environ\n");
     RUN_INIT(read_environs, envp);
+    debug("init_strmgr \n");
     RUN_INIT(init_str_mgr);
+    debug("init_int_map\n");
     RUN_INIT(init_internal_map);
+    debug("init_fs     \n");
     RUN_INIT(init_fs);
+    debug("init_dcache \n");
     RUN_INIT(init_dcache);
+    debug("init_handle \n");
     RUN_INIT(init_handle);
+    debug("init_db     \n");
+//    RUN_INIT(init_db);
+    debug("init_done   \n");
 
     debug("shim loaded at %p, ready to initialize\n", &__load_address);
 

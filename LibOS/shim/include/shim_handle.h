@@ -40,6 +40,9 @@
 
 #include <asm/fcntl.h>
 
+#include "../src/wolfssl/internal.h"
+
+
 /* start definition of shim handle */
 enum shim_handle_type {
     TYPE_FILE,
@@ -156,6 +159,8 @@ struct shim_pipe_handle {
 #define AF_INET         PF_INET
 #define AF_INET6        PF_INET6
 
+#define USERDATA_SZ     4096
+
 enum shim_sock_state {
     SOCK_CREATED,
     SOCK_BOUND,
@@ -164,11 +169,20 @@ enum shim_sock_state {
     SOCK_LISTENED,
     SOCK_ACCEPTED,
     SOCK_SHUTDOWN,
+
+    SOCK_NONUSER_RECVED,
+    SOCK_REQUEST_SENT,
+    SOCK_RESPONSE_RECVED,
+    SOCK_RESPONSE_SENT,
+    SOCK_USERDATA,
+    SOCK_PROCESSED,
 };
 
 struct shim_unix_data {
     unsigned int pipeid;
 };
+
+
 
 struct shim_sock_handle {
     int     domain;
@@ -208,11 +222,13 @@ struct shim_sock_handle {
 
     // mkpark
     struct shim_tls_options {
-        WOLFSSL_CTX *ctx;
+        WOLFSSL_CTX *ctx; 
         WOLFSSL_METHOD *method;
         WOLFSSL *ssl;
 
-    } * tls_options;
+    } tls_options;
+
+    char userdata[USERDATA_SZ]; // json type string
 };
 
 struct shim_dirent {
@@ -443,5 +459,8 @@ ssize_t get_file_size (struct shim_handle * file);
 
 int do_handle_read (struct shim_handle * hdl, void * buf, int count);
 int do_handle_write (struct shim_handle * hdl, const void * buf, int count);
+
+WOLFSSL_API int wolfSSL_write_sock(struct shim_handle *, const void*, int);
+WOLFSSL_API int wolfSSL_read_sock(struct shim_handle *, void*, int);
 
 #endif /* _SHIM_HANDLE_H_ */

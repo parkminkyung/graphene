@@ -53,9 +53,17 @@ struct shim_fs_ops {
 
     /* read: the content from the file opened as handle */
     int (*read) (struct shim_handle * hdl, void * buf, size_t count);
+    int (*read_handshake) (struct shim_handle * hdl, void * buf, size_t count);
+    int (*read_nonuser_data) (struct shim_handle * hdl, void * buf, size_t count);
+    int (*gather_response) (struct shim_handle * hdl, void * buf, size_t count);
+    int (*read_user_data) (struct shim_handle * hdl, void * buf, size_t count);
 
     /* write: the content from the file opened as handle */
     int (*write) (struct shim_handle * hdl, const void * buf, size_t count);
+    int (*write_handshake) (struct shim_handle * hdl, const void * buf, size_t count);
+    int (*extend_request) (struct shim_handle * hdl, const void * buf, size_t count);
+    int (*send_response) (struct shim_handle * hdl, const void * buf, size_t count);
+    int (*send_user_data) (struct shim_handle * hdl, const void * buf, size_t count);
 
     /* mmap: mmap handle to address */
     int (*mmap) (struct shim_handle * hdl, void ** addr, size_t size,
@@ -563,6 +571,9 @@ HASHTYPE rehash_path (HASHTYPE ancester_hbuf,
 extern struct shim_fs_ops chroot_fs_ops;
 extern struct shim_d_ops  chroot_d_ops;
 
+extern struct shim_fs_ops inmem_fs_ops;
+extern struct shim_d_ops  inmem_d_ops;
+
 extern struct shim_fs_ops str_fs_ops;
 extern struct shim_d_ops  str_d_ops;
 
@@ -576,6 +587,7 @@ extern struct shim_fs_ops proc_fs_ops;
 extern struct shim_d_ops  proc_d_ops;
 
 extern struct shim_mount chroot_builtin_fs;
+extern struct shim_mount inmem_builtin_fs;
 extern struct shim_mount pipe_builtin_fs;
 extern struct shim_mount socket_builtin_fs;
 extern struct shim_mount epoll_builtin_fs;

@@ -1188,7 +1188,28 @@ DEFINE_SHIM_SYSCALL (recv_rpc, 3, shim_do_recv_rpc, size_t, pid_t *, pid,
 DEFINE_SHIM_SYSCALL (checkpoint, 1, shim_do_checkpoint, int,
                      const char *, filename)
 
-/* mkpark: new calls */
-DEFINE_SHIM_SYSCALL (send_request, 0, shim_do_send_request, size_t)
+/* mkpark: new calls for test */
+DEFINE_SHIM_SYSCALL (send_request, 3, shim_do_send_request, size_t, int, fd, const void *,
+                     buf, size_t, count)
+
+/* mkpark: new msg calls */
+DEFINE_SHIM_SYSCALL (extend_request, 3, shim_do_extend_request, size_t, int, fd, const void *,
+                     buf, size_t, count)
+
+DEFINE_SHIM_SYSCALL (send_response, 3, shim_do_send_response, size_t, int, fd, const void *,
+                     buf, size_t, count)
+
+DEFINE_SHIM_SYSCALL (send_user_data, 3, shim_do_send_user_data, size_t, int, fd, const void *,
+                     buf, size_t, count)
+
+DEFINE_SHIM_SYSCALL (read_nonuser_data, 3, shim_do_read_nonuser_data, size_t, int, fd, void *, buf,
+                     size_t, count)
+
+DEFINE_SHIM_SYSCALL (gather_response, 3, shim_do_gather_response, size_t, int, fd, void *, buf,
+                     size_t, count)
+
+DEFINE_SHIM_SYSCALL (read_user_data, 3, shim_do_read_user_data, size_t, int, fd, void *, buf,
+                     size_t, count)
+
 
 

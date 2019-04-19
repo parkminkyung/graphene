@@ -35,36 +35,36 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     (shim_fp) __shim_write,
     (shim_fp) __shim_open,
     (shim_fp) __shim_close,
-    (shim_fp) __shim_stat,
-    (shim_fp) __shim_fstat,
+    (shim_fp) __shim_stat,  // three: file information
+    (shim_fp) __shim_fstat, 
     (shim_fp) __shim_lstat,
-    (shim_fp) __shim_poll,
-    (shim_fp) __shim_lseek,
-    (shim_fp) __shim_mmap,
-    (shim_fp) __shim_mprotect,
-    (shim_fp) __shim_munmap,
-    (shim_fp) __shim_brk,
-    (shim_fp) __shim_rt_sigaction,
-    (shim_fp) __shim_rt_sigprocmask,
+    (shim_fp) __shim_poll, // waits for one of a set of file descriptors to become ready to perform I/O
+    (shim_fp) __shim_lseek, // repositions the file offset of the open file
+    (shim_fp) __shim_mmap, // creates a new mapping in the virtual address space of the calling process
+    (shim_fp) __shim_mprotect, // changes the access protections for the calling process's memory pages containing any part of the address range
+    (shim_fp) __shim_munmap, // mmap 해제
+    (shim_fp) __shim_brk, // change the location of the program break 
+    (shim_fp) __shim_rt_sigaction, // signal handling 
+    (shim_fp) __shim_rt_sigprocmask,  
     (shim_fp) __shim_rt_sigreturn,
-    (shim_fp) __shim_ioctl,
-    (shim_fp) __shim_pread64,
-    (shim_fp) __shim_pwrite64,
-    (shim_fp) __shim_readv,
-    (shim_fp) __shim_writev,
-    (shim_fp) __shim_access,
-    (shim_fp) __shim_pipe,
-    (shim_fp) __shim_select,
-    (shim_fp) __shim_sched_yield,
-    (shim_fp) __shim_mremap,
-    (shim_fp) __shim_msync,
-    (shim_fp) __shim_mincore,
+    (shim_fp) __shim_ioctl, // only FIONREAD supported
+    (shim_fp) __shim_pread64, // file
+    (shim_fp) __shim_pwrite64, // file
+    (shim_fp) __shim_readv, // file
+    (shim_fp) __shim_writev, // file
+    (shim_fp) __shim_access, // file
+    (shim_fp) __shim_pipe, // pipe creation 
+    (shim_fp) __shim_select, // file
+    (shim_fp) __shim_sched_yield, // scheduler yielding
+    (shim_fp) __shim_mremap, // XXX from here 
+    (shim_fp) __shim_msync, 
+    (shim_fp) __shim_mincore, 
     (shim_fp) __shim_madvise,
     (shim_fp) __shim_shmget,
     (shim_fp) __shim_shmat,
-    (shim_fp) __shim_shmctl,
-    (shim_fp) __shim_dup,
-    (shim_fp) __shim_dup2,
+    (shim_fp) __shim_shmctl, // XXX to here
+    (shim_fp) __shim_dup, // duplicate file descriptor
+    (shim_fp) __shim_dup2, 
     (shim_fp) __shim_pause,
     (shim_fp) __shim_nanosleep,
     (shim_fp) __shim_getitimer,
@@ -98,13 +98,13 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     (shim_fp) __shim_semget,
     (shim_fp) __shim_semop,
     (shim_fp) __shim_semctl,
-    (shim_fp) __shim_shmdt,
+    (shim_fp) __shim_shmdt, // XXX 
     (shim_fp) __shim_msgget,
     (shim_fp) __shim_msgsnd,
     (shim_fp) __shim_msgrcv,
     (shim_fp) __shim_msgctl,
     (shim_fp) __shim_fcntl,
-    (shim_fp) __shim_flock,
+    (shim_fp) __shim_flock, // XXX
     (shim_fp) __shim_fsync,
     (shim_fp) __shim_fdatasync,
     (shim_fp) __shim_truncate,
@@ -117,24 +117,24 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     (shim_fp) __shim_mkdir,
     (shim_fp) __shim_rmdir,
     (shim_fp) __shim_creat,
-    (shim_fp) __shim_link,
-    (shim_fp) __shim_unlink,
-    (shim_fp) __shim_symlink,
+    (shim_fp) __shim_link, // XXX
+    (shim_fp) __shim_unlink, 
+    (shim_fp) __shim_symlink, // XXX
     (shim_fp) __shim_readlink,
     (shim_fp) __shim_chmod,
     (shim_fp) __shim_fchmod,
     (shim_fp) __shim_chown,
     (shim_fp) __shim_fchown,
-    (shim_fp) __shim_lchown,
+    (shim_fp) __shim_lchown, // XXX
     (shim_fp) __shim_umask,
     (shim_fp) __shim_gettimeofday,
     (shim_fp) __shim_getrlimit,
     (shim_fp) __shim_getrusage,
-    (shim_fp) __shim_sysinfo,
-    (shim_fp) __shim_times,
-    (shim_fp) __shim_ptrace,
+    (shim_fp) __shim_sysinfo, // XXX
+    (shim_fp) __shim_times, // XXX
+    (shim_fp) __shim_ptrace, // XXX
     (shim_fp) __shim_getuid,
-    (shim_fp) __shim_syslog,
+    (shim_fp) __shim_syslog, // XXX
     (shim_fp) __shim_getgid,
     (shim_fp) __shim_setuid,
     (shim_fp) __shim_setgid,
@@ -144,26 +144,26 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     (shim_fp) __shim_getppid,
     (shim_fp) __shim_getpgrp,
     (shim_fp) __shim_setsid,
-    (shim_fp) __shim_setreuid,
+    (shim_fp) __shim_setreuid, // XXX from here
     (shim_fp) __shim_setregid,
     (shim_fp) __shim_getgroups,
     (shim_fp) __shim_setgroups,
     (shim_fp) __shim_setresuid,
     (shim_fp) __shim_getresuid,
-    (shim_fp) __shim_setresgid,
-    (shim_fp) __shim_getresgid,
+    (shim_fp) __shim_setresgid, 
+    (shim_fp) __shim_getresgid, // XXX to here
     (shim_fp) __shim_getpgid,
-    (shim_fp) __shim_setfsuid,
-    (shim_fp) __shim_setfsgid,
+    (shim_fp) __shim_setfsuid, // XXX
+    (shim_fp) __shim_setfsgid, // XXX
     (shim_fp) __shim_getsid,
-    (shim_fp) __shim_capget,
-    (shim_fp) __shim_capset,
-    (shim_fp) __shim_rt_sigpending,
-    (shim_fp) __shim_rt_sigtimedwait,
-    (shim_fp) __shim_rt_sigqueueinfo,
+    (shim_fp) __shim_capget, // XXX 
+    (shim_fp) __shim_capset, // XXX 
+    (shim_fp) __shim_rt_sigpending,  
+    (shim_fp) __shim_rt_sigtimedwait, // XXX
+    (shim_fp) __shim_rt_sigqueueinfo, // XXX
     (shim_fp) __shim_rt_sigsuspend,
     (shim_fp) __shim_sigaltstack,
-    (shim_fp) __shim_utime,
+    (shim_fp) __shim_utime, // XXX from 
     (shim_fp) __shim_mknod,
     (shim_fp) __shim_uselib,
     (shim_fp) __shim_personality,
@@ -188,14 +188,14 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     (shim_fp) __shim_modify_ldt,
     (shim_fp) __shim_pivot_root,
     (shim_fp) __shim__sysctl,
-    (shim_fp) __shim_prctl,
+    (shim_fp) __shim_prctl, // XXX to
     (shim_fp) __shim_arch_prctl,
-    (shim_fp) __shim_adjtimex,
+    (shim_fp) __shim_adjtimex, // XXX
     (shim_fp) __shim_setrlimit,
     (shim_fp) __shim_chroot,
-    (shim_fp) __shim_sync,
+    (shim_fp) __shim_sync, // XXX from
     (shim_fp) __shim_acct,
-    (shim_fp) __shim_settimeofday,
+    (shim_fp) __shim_settimeofday, 
     (shim_fp) __shim_mount,
     (shim_fp) __shim_umount2,
     (shim_fp) __shim_swapon,
@@ -216,9 +216,9 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     (shim_fp) 0, // shim_putpmsg,
     (shim_fp) 0, // shim_afs_syscall,
     (shim_fp) 0, // shim_tuxcall,
-    (shim_fp) 0, // shim_security,
+    (shim_fp) 0, // shim_security, // to 
     (shim_fp) __shim_gettid,
-    (shim_fp) __shim_readahead,
+    (shim_fp) __shim_readahead, // from
     (shim_fp) __shim_setxattr,
     (shim_fp) __shim_lsetxattr,
     (shim_fp) __shim_fsetxattr,
@@ -355,4 +355,11 @@ shim_fp shim_table [LIBOS_SYSCALL_BOUND] = {
     
 // mkpark
     (shim_fp) __shim_send_request,
+// mkpark
+    (shim_fp) __shim_extend_request,
+    (shim_fp) __shim_send_response,
+    (shim_fp) __shim_send_user_data,
+    (shim_fp) __shim_read_nonuser_data,
+    (shim_fp) __shim_gather_response,
+    (shim_fp) __shim_read_user_data,
 };

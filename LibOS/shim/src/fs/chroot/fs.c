@@ -431,7 +431,7 @@ static int __chroot_open (struct shim_dentry * dent,
     }
 
     if (!hdl) {
-        DkObjectClose(palhdl);
+        DkObjectClose(palhdl); // XXX check
         return 0;
     }
 
@@ -1100,7 +1100,7 @@ retry_read:
 out:
     free(buf);
 out_hdl:
-    DkObjectClose(pal_hdl);
+    DkObjectClose(pal_hdl); // XXX check
     return ret;
 }
 
@@ -1168,7 +1168,7 @@ static int chroot_unlink (struct shim_dentry * dir, struct shim_dentry * dent)
         return -PAL_ERRNO;
 
     DkStreamDelete(pal_hdl, 0);
-    DkObjectClose(pal_hdl);
+    DkObjectClose(pal_hdl); // XXX check
 
     dent->mode = NO_MODE;
     data->mode = 0;
@@ -1241,7 +1241,7 @@ static int chroot_rename (struct shim_dentry * old, struct shim_dentry * new)
         return -PAL_ERRNO;
 
     if (!DkStreamChangeName(pal_hdl, qstrgetstr(&new_data->host_uri))) {
-        DkObjectClose(pal_hdl);
+        DkObjectClose(pal_hdl); // XXX check
         return -PAL_ERRNO;
     }
 
@@ -1249,7 +1249,7 @@ static int chroot_rename (struct shim_dentry * old, struct shim_dentry * new)
     old->mode = NO_MODE;
     old_data->mode = 0;
 
-    DkObjectClose(pal_hdl);
+    DkObjectClose(pal_hdl); // XXX check
 
     atomic_inc(&old_data->version);
     atomic_set(&old_data->size, 0);
@@ -1272,11 +1272,11 @@ static int chroot_chmod (struct shim_dentry * dent, mode_t mode)
     PAL_STREAM_ATTR attr = { .share_flags = mode };
 
     if (!DkStreamAttributesSetbyHandle(pal_hdl, &attr)) {
-        DkObjectClose(pal_hdl);
+        DkObjectClose(pal_hdl); // XXX check
         return -PAL_ERRNO;
     }
 
-    DkObjectClose(pal_hdl);
+    DkObjectClose(pal_hdl); // XXX check
     dent->mode = data->mode = mode;
 
     return 0;

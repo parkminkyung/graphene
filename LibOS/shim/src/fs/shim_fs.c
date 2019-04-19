@@ -41,18 +41,20 @@ struct shim_fs {
     struct shim_d_ops * d_ops;
 };
 
-#define NUM_MOUNTABLE_FS    3
+#define NUM_MOUNTABLE_FS   3 // 4
 
 struct shim_fs mountable_fs [NUM_MOUNTABLE_FS] = {
         { .name = "chroot", .fs_ops = &chroot_fs_ops, .d_ops = &chroot_d_ops, },
+//        { .name = "inmem", .fs_ops = &inmem_fs_ops, .d_ops = &inmem_d_ops, },
         { .name = "proc",   .fs_ops = &proc_fs_ops,   .d_ops = &proc_d_ops,   },
         { .name = "dev",    .fs_ops = &dev_fs_ops,    .d_ops = &dev_d_ops,    },
     };
 
-#define NUM_BUILTIN_FS      4
+#define NUM_BUILTIN_FS     4 // 5
 
 struct shim_mount * builtin_fs [NUM_BUILTIN_FS] = {
                 &chroot_builtin_fs,
+//                &inmem_builtin_fs,
                 &pipe_builtin_fs,
                 &socket_builtin_fs,
                 &epoll_builtin_fs,
@@ -114,6 +116,10 @@ static int __mount_root (struct shim_dentry ** root)
     if ((ret = mount_fs("chroot", "file:", "/", NULL, root, 0)) < 0) {
         debug("mounting root filesystem failed (%d)\n", ret);
     }
+    /*
+    if ((ret = mount_fs("inmem", "file:", "/", NULL, root, 0)) < 0) {
+        debug("mounting root inmem filesystem failed (%d)\n", ret);
+    } */
     return ret;
 }
 
@@ -136,6 +142,7 @@ static int __mount_sys (struct shim_dentry *root)
         return ret;
     }
 
+    
     debug("mounting as chroot filesystem: from dev:tty to /dev\n");
 
     if ((ret = mount_fs("chroot", "dev:tty", "/dev/tty", dev_dent, NULL, 0)) < 0) {

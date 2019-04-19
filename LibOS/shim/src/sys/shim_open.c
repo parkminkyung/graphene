@@ -42,6 +42,69 @@
 #include <linux/stat.h>
 #include <linux/fcntl.h>
 
+int do_handle_read_handshake (struct shim_handle * hdl, void * buf, int count)
+{
+    if (!(hdl->acc_mode & MAY_READ))
+        return -EACCES;
+
+    struct shim_mount * fs = hdl->fs;
+    assert (fs && fs->fs_ops);
+
+    if (!fs->fs_ops->read_handshake)
+        return -EBADF;
+
+    if (hdl->type == TYPE_DIR)
+        return -EISDIR;
+
+    return fs->fs_ops->read_handshake(hdl, buf, count);
+}
+
+size_t shim_do_read_handshake (int fd, void * buf, size_t count)
+{
+    if (!buf || test_user_memory(buf, count, true))
+        return -EFAULT;
+
+    struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
+    if (!hdl)
+        return -EBADF;
+
+    int ret = do_handle_read_handshake(hdl, buf, count);
+    put_handle(hdl);
+    return ret;
+}
+
+int do_handle_write_handshake (struct shim_handle * hdl, const void * buf, int count)
+{
+    if (!(hdl->acc_mode & MAY_WRITE))
+        return -EACCES;
+
+    struct shim_mount * fs = hdl->fs;
+    assert (fs && fs->fs_ops);
+
+    if (!fs->fs_ops->write_handshake)
+        return -EBADF;
+
+    if (hdl->type == TYPE_DIR)
+        return -EISDIR;
+
+    return fs->fs_ops->write_handshake(hdl, buf, count);
+}
+
+size_t shim_do_write_handshake (int fd, const void * buf, size_t count)
+{
+    if (!buf || test_user_memory((void *) buf, count, false))
+        return -EFAULT;
+
+    struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
+    if (!hdl)
+        return -EBADF;
+
+    int ret = do_handle_write_handshake(hdl, buf, count);
+    put_handle(hdl);
+    return ret;
+}
+
+
 int do_handle_read (struct shim_handle * hdl, void * buf, int count)
 {
     if (!(hdl->acc_mode & MAY_READ))

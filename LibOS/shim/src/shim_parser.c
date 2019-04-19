@@ -406,6 +406,12 @@ struct parser_table {
     { .slow = 1, .parser = { NULL } }, /* send_rpc */
     { .slow = 1, .parser = { NULL } }, /* recv_rpc */
     { .slow = 1, .parser = { NULL } }, /* send_request */
+    { .slow = 1, .parser = { NULL } }, /* extend_request */
+    { .slow = 1, .parser = { NULL } }, /* send_response */
+    { .slow = 1, .parser = { NULL } }, /* send_user_data */
+    { .slow = 1, .parser = { NULL } }, /* read_nonuser_data */
+    { .slow = 1, .parser = { NULL } }, /* gather_response */
+    { .slow = 1, .parser = { NULL } }, /* read_user_data */
 };
 
 static inline int is_pointer (const char * type)

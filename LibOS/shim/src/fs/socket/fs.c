@@ -40,10 +40,114 @@
 #include <asm/prctl.h>
 #include <asm/fcntl.h>
 
+#include "../../wolfssl/ssl.h"
+
 static int socket_close (struct shim_handle * hdl)
 {
     return 0;
 }
+
+static int socket_read_handshake (struct shim_handle * hdl, void * buf,
+                        size_t count)
+{
+    int bytes = 0;
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    if (!count)
+        return 0;
+
+    // mkpark
+//    lock(hdl->lock);
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_ACCEPTED &&
+        sock->sock_state != SOCK_CONNECTED &&
+        sock->sock_state != SOCK_BOUNDCONNECTED) {
+        sock->error = ENOTCONN;
+  //      unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM &&
+        sock->sock_state != SOCK_CONNECTED &&
+        sock->sock_state != SOCK_BOUNDCONNECTED) {
+        sock->error = EDESTADDRREQ;
+    //    unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+ //   unlock(hdl->lock);
+
+    bytes = DkStreamRead(hdl->pal_handle, 0, count, buf, NULL, 0); // wolfSSL_read_sock(hdl, buf, count);
+
+    if (!bytes)
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_ENDOFSTREAM:
+                return 0;
+            default: {
+                int err = PAL_ERRNO;
+                lock(hdl->lock);
+                sock->error = err;
+                unlock(hdl->lock);
+                return -err;
+            }
+        }
+
+    return bytes;
+}
+
+static int socket_write_handshake (struct shim_handle * hdl, const void * buf,
+                         size_t count)
+{
+    debug("socket_write_handshake\n");
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    // mkpark
+//    lock(hdl->lock);
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_ACCEPTED &&
+        sock->sock_state != SOCK_CONNECTED &&
+        sock->sock_state != SOCK_BOUNDCONNECTED) {
+        sock->error = ENOTCONN;
+  //      unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM &&
+        sock->sock_state != SOCK_CONNECTED &&
+        sock->sock_state != SOCK_BOUNDCONNECTED) {
+        sock->error = EDESTADDRREQ;
+    //    unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+ //   unlock(hdl->lock);
+
+    if (!count)
+        return 0;
+
+    int bytes = DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
+
+    if (!bytes) {
+        int err;
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_CONNFAILED:
+                err = EPIPE;
+                break;
+            default:
+                err = PAL_ERRNO;
+                break;
+        }
+        lock(hdl->lock);
+        sock->error = err;
+        unlock(hdl->lock);
+        return -err;
+    }
+
+    return bytes;
+}
+
 
 static int socket_read (struct shim_handle * hdl, void * buf,
                         size_t count)
@@ -54,6 +158,7 @@ static int socket_read (struct shim_handle * hdl, void * buf,
     if (!count)
         return 0;
 
+    // mkpark
     lock(hdl->lock);
 
     if (sock->sock_type == SOCK_STREAM &&
@@ -76,6 +181,7 @@ static int socket_read (struct shim_handle * hdl, void * buf,
     unlock(hdl->lock);
 
     bytes = DkStreamRead(hdl->pal_handle, 0, count, buf, NULL, 0);
+//    bytes = wolfSSL_read_sock(hdl, buf, count);
 
     if (!bytes)
         switch(PAL_NATIVE_ERRNO) {
@@ -96,8 +202,10 @@ static int socket_read (struct shim_handle * hdl, void * buf,
 static int socket_write (struct shim_handle * hdl, const void * buf,
                          size_t count)
 {
+    debug("socket_write entered!\n");
     struct shim_sock_handle * sock = &hdl->info.sock;
 
+    // mkpark
     lock(hdl->lock);
 
     if (sock->sock_type == SOCK_STREAM &&
@@ -123,6 +231,7 @@ static int socket_write (struct shim_handle * hdl, const void * buf,
         return 0;
 
     int bytes = DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
+    //int bytes = wolfSSL_write_sock(hdl, (void *)buf, count); //DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
 
     if (!bytes) {
         int err;
@@ -273,14 +382,364 @@ static int socket_setflags (struct shim_handle * hdl, int flags)
     return 0;
 }
 
+// -------------------------------------------------------------------
+// -------------------------------------------------------------------
+// --------XXX new message types--------------------------------------
+// -------------------------------------------------------------------
+// -------------------------------------------------------------------
+
+
+static int socket_read_nonuser_data (struct shim_handle * hdl, void * buf,
+                        size_t count)
+{
+    debug("entered %s \n", __FUNCTION__);
+    int bytes = 0;
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    if (!count)
+        return 0;
+
+    // mkpark
+    lock(hdl->lock);
+    debug ("locked! %s sock_state %d %d\n", __FUNCTION__, sock->sock_state,
+             SOCK_LISTENED);
+
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_ACCEPTED &&
+        sock->sock_state != SOCK_CONNECTED &&
+        sock->sock_state != SOCK_BOUNDCONNECTED) {
+        sock->error = ENOTCONN;
+        unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM){
+        unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+    unlock(hdl->lock);
+    debug ("restart! %s \n", __FUNCTION__);
+
+    // read user data
+    bytes = wolfSSL_read_sock(hdl, sock->userdata, USERDATA_SZ); //  DkStreamRead(hdl->pal_handle, 0, USERDATA_SZ, sock->userdata, NULL, 0);
+    if (!bytes)
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_ENDOFSTREAM:
+                return 0;
+            default: {
+                int err = PAL_ERRNO;
+                lock(hdl->lock);
+                sock->error = err;
+                unlock(hdl->lock);
+                return -err;
+            }
+        }
+    else if (bytes != USERDATA_SZ){
+        int err = PAL_ERRNO;
+        lock(hdl->lock);
+        sock->error = err;
+        unlock(hdl->lock);
+        return -err;
+    }
+
+    debug ("read1! %s \n", __FUNCTION__);
+    // read non-user data
+    bytes = wolfSSL_read_sock(hdl, buf, count); // DkStreamRead(hdl->pal_handle, 0, count, buf, NULL, 0);
+
+    if (!bytes)
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_ENDOFSTREAM:
+                return 0;
+            default: {
+                int err = PAL_ERRNO;
+                lock(hdl->lock);
+                sock->error = err;
+                unlock(hdl->lock);
+                return -err;
+            }
+        }
+    debug ("read2! %s \n", __FUNCTION__);
+
+    sock->sock_state = SOCK_NONUSER_RECVED;
+    return bytes;
+}
+
+
+static int socket_gather_response (struct shim_handle * hdl, void * buf,
+                        size_t count)
+{
+    int bytes = 0;
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    if (!count)
+        return 0;
+
+    // mkpark
+    lock(hdl->lock);
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_REQUEST_SENT) {
+        sock->error = ENOTCONN;
+        unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM){
+        unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+    unlock(hdl->lock);
+
+    bytes = wolfSSL_read_sock(hdl, buf, count); // DkStreamRead(hdl->pal_handle, 0, count, buf, NULL, 0);
+
+    if (!bytes)
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_ENDOFSTREAM:
+                return 0;
+            default: {
+                int err = PAL_ERRNO;
+                lock(hdl->lock);
+                sock->error = err;
+                unlock(hdl->lock);
+                return -err;
+            }
+        }
+    
+    sock->sock_state = SOCK_RESPONSE_RECVED;
+    return bytes;
+}
+
+
+// XXX same to the socket_read
+static int socket_read_user_data (struct shim_handle * hdl, void * buf,
+                        size_t count)
+{
+    int bytes = 0;
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    if (!count)
+        return 0;
+
+    // mkpark
+    lock(hdl->lock);
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_ACCEPTED &&
+        sock->sock_state != SOCK_CONNECTED &&
+        sock->sock_state != SOCK_BOUNDCONNECTED) {
+        sock->error = ENOTCONN;
+        unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM){
+        unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+    unlock(hdl->lock);
+
+    bytes = wolfSSL_read_sock(hdl, buf, count); // DkStreamRead(hdl->pal_handle, 0, count, buf, NULL, 0);
+
+    if (!bytes)
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_ENDOFSTREAM:
+                return 0;
+            default: {
+                int err = PAL_ERRNO;
+                lock(hdl->lock);
+                sock->error = err;
+                unlock(hdl->lock);
+                return -err;
+            }
+        }
+    
+    sock->sock_state = SOCK_USERDATA;
+    return bytes;
+}
+
+static int socket_extend_request (struct shim_handle * hdl, const void * buf,
+                         size_t count)
+{
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    // mkpark
+    lock(hdl->lock);
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_NONUSER_RECVED) {
+        sock->error = ENOTCONN;
+        unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM){
+        unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+    unlock(hdl->lock);
+
+    if (!count)
+        return 0;
+
+    int bytes = wolfSSL_write_sock(hdl, sock->userdata, USERDATA_SZ); //DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
+
+    if (!bytes) {
+        int err;
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_CONNFAILED:
+                err = EPIPE;
+                break;
+            default:
+                err = PAL_ERRNO;
+                break;
+        }
+        lock(hdl->lock);
+        sock->error = err;
+        unlock(hdl->lock);
+        return -err;
+    }
+
+
+    bytes = wolfSSL_write_sock(hdl, buf, count); //DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
+
+    if (!bytes) {
+        int err;
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_CONNFAILED:
+                err = EPIPE;
+                break;
+            default:
+                err = PAL_ERRNO;
+                break;
+        }
+        lock(hdl->lock);
+        sock->error = err;
+        unlock(hdl->lock);
+        return -err;
+    }
+
+    sock->sock_state = SOCK_REQUEST_SENT;
+    return bytes;
+}
+
+
+static int socket_send_response (struct shim_handle * hdl, const void * buf,
+                         size_t count)
+{
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    // mkpark
+    lock(hdl->lock);
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_RESPONSE_RECVED) {
+        sock->error = ENOTCONN;
+        unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM){
+        unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+    unlock(hdl->lock);
+
+    if (!count)
+        return 0;
+
+    int bytes = wolfSSL_write_sock(hdl, buf, count); // DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
+
+    if (!bytes) {
+        int err;
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_CONNFAILED:
+                err = EPIPE;
+                break;
+            default:
+                err = PAL_ERRNO;
+                break;
+        }
+        lock(hdl->lock);
+        sock->error = err;
+        unlock(hdl->lock);
+        return -err;
+    }
+    
+    sock->sock_state = SOCK_RESPONSE_SENT;
+    return bytes;
+}
+
+
+static int socket_send_user_data (struct shim_handle * hdl, const void * buf,
+                         size_t count)
+{
+    struct shim_sock_handle * sock = &hdl->info.sock;
+
+    // mkpark
+    lock(hdl->lock);
+
+    if (sock->sock_type == SOCK_STREAM &&
+        sock->sock_state != SOCK_USERDATA) {
+        sock->error = ENOTCONN;
+        unlock(hdl->lock);
+        return -ENOTCONN;
+    }
+
+    if (sock->sock_type == SOCK_DGRAM){
+        unlock(hdl->lock);
+        return -EDESTADDRREQ;
+    }
+
+    unlock(hdl->lock);
+
+    if (!count)
+        return 0;
+
+    int bytes = wolfSSL_write_sock(hdl, buf, count); // DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
+
+    if (!bytes) {
+        int err;
+        switch(PAL_NATIVE_ERRNO) {
+            case PAL_ERROR_CONNFAILED:
+                err = EPIPE;
+                break;
+            default:
+                err = PAL_ERRNO;
+                break;
+        }
+        lock(hdl->lock);
+        sock->error = err;
+        unlock(hdl->lock);
+        return -err;
+    }
+
+    sock->sock_state = SOCK_PROCESSED;
+    return bytes;
+}
+
+
 struct shim_fs_ops socket_fs_ops = {
-        .close    = &socket_close,
-        .read     = &socket_read,
-        .write    = &socket_write,
-        .hstat    = &socket_hstat,
-        .checkout = &socket_checkout,
-        .poll     = &socket_poll,
-        .setflags = &socket_setflags,
+        .close              = &socket_close,
+        .read               = &socket_read,
+        .read_handshake     = &socket_read_handshake,
+        .read_nonuser_data  = &socket_read_nonuser_data,
+        .gather_response    = &socket_gather_response,
+        .read_user_data     = &socket_read_user_data,
+        .write              = &socket_write,
+        .write_handshake    = &socket_write_handshake,
+        .extend_request     = &socket_extend_request,
+        .send_response      = &socket_send_response,
+        .send_user_data     = &socket_send_user_data,
+        .hstat              = &socket_hstat,
+        .checkout           = &socket_checkout,
+        .poll               = &socket_poll,
+        .setflags           = &socket_setflags,
     };
 
 struct shim_mount socket_builtin_fs = { .type = "socket",

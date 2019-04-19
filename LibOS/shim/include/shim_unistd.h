@@ -73,6 +73,28 @@ struct sigcp {
 
 #include "shim_unistd_defs.h"
 
+// mkpark
 size_t send_request(int fd, const void * buf, size_t count);
 #define __NR_send_request         (LIBOS_SYSCALL_BASE + 9)
+
+size_t extend_request(int fd, const void * buf, size_t count);
+#define __NR_extend_request         (LIBOS_SYSCALL_BASE + 10)
+
+size_t send_response(int fd, const void * buf, size_t count);
+#define __NR_send_response         (LIBOS_SYSCALL_BASE + 11)
+
+size_t send_user_data(int fd, const void * buf, size_t count);
+#define __NR_send_user_data         (LIBOS_SYSCALL_BASE + 12)
+
+size_t read_nonuser_data(int fd, void * buf, size_t count);
+#define __NR_read_nonuser_data         (LIBOS_SYSCALL_BASE + 13)
+
+size_t gather_response(int fd, void * buf, size_t count);
+#define __NR_gather_response         (LIBOS_SYSCALL_BASE + 14)
+
+size_t read_user_data(int fd, void * buf, size_t count);
+#define __NR_read_user_data         (LIBOS_SYSCALL_BASE + 15)
+
+
+
 #endif /* _SHIM_UNISTD_H_ */

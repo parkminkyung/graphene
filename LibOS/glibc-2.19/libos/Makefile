@@ -27,7 +27,7 @@ headers		:=
 # Internal header files.
 distribute	:= errno.h
 
-liblibos-routines := checkpoint sandbox msgpersist benchmark
+liblibos-routines := checkpoint sandbox msgpersist benchmark advmsg
 
 # Build the -llibos library.
 

@@ -329,10 +329,19 @@ long __shim_checkpoint(long);
 
 // mkpark
 long __shim_send_request (long, long, long);
+// mkpark2
+long __shim_extend_request (long, long, long);
+long __shim_send_response (long, long, long);
+long __shim_send_user_data (long, long, long);
+long __shim_read_nonuser_data (long, long, long);
+long __shim_gather_response (long, long, long);
+long __shim_read_user_data (long, long, long);
 
 /* syscall implementation */
 size_t shim_do_read (int fd, void * buf, size_t count);
 size_t shim_do_write (int fd, const void * buf, size_t count);
+size_t shim_do_write_handshake (int fd, const void * buf, size_t count);
+size_t shim_do_read_handshake (int fd, void * buf, size_t count);
 int shim_do_open (const char * file, int flags, mode_t mode);
 int shim_do_close (int fd);
 int shim_do_stat (const char * file, struct stat * statbuf);
@@ -514,6 +523,12 @@ size_t shim_do_recv_rpc (pid_t * pid, void * buf, size_t size);
 int shim_do_checkpoint(const char * filename);
 
 size_t shim_do_send_request(int fd, const void * buf, size_t count);
+size_t shim_do_extend_request(int fd, const void * buf, size_t count);
+size_t shim_do_send_response(int fd, const void * buf, size_t count);
+size_t shim_do_send_user_data(int fd, const void * buf, size_t count);
+size_t shim_do_read_nonuser_data(int fd, void * buf, size_t count);
+size_t shim_do_gather_response(int fd, void * buf, size_t count);
+size_t shim_do_read_user_data(int fd, void * buf, size_t count);
 #endif /* ! IN_SHIM */
 
 /* syscall wrappers */
