@@ -48,6 +48,17 @@ PAL {
 
         # Control block
         pal_control; pal_control_addr;
+				
+				# additional
+#				DkInStreamOpen; DkInStreamRead; DkInStreamWrite;
+#        DkInStreamMap; DkInStreamUnmap; DkInStreamSetLength;
+#        DkInStreamFlush; DkInStreamDelete;
+#				DkInStreamWaitForClient;
+#        DkInStreamGetName;
+#        DkInStreamAttributesQuerybyHandle; DkInStreamAttributesQuery;
+#				DkInStreamChangeName;
+#        DkInStreamAttributesSetbyHandle;
+
 
     local: *;
 };

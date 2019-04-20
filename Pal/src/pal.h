@@ -37,6 +37,8 @@ typedef uint32_t      PAL_FLG;
 typedef uint32_t      PAL_IDX;
 typedef bool          PAL_BOL;
 
+
+
 #ifdef IN_PAL
 #include <atomic.h>
 typedef struct atomic_int PAL_REF;
@@ -109,6 +111,7 @@ enum {
     pal_type_pipecli,
     pal_type_pipeprv,
     pal_type_dev,
+    pal_type_debug,
     pal_type_dir,
     pal_type_tcp,
     pal_type_tcpsrv,

@@ -38,11 +38,12 @@ extern struct handle_ops file_ops;
 extern struct handle_ops pipe_ops;
 extern struct handle_ops pipeprv_ops;
 extern struct handle_ops dev_ops;
+extern struct handle_ops debug_ops;
 extern struct handle_ops dir_ops;
 extern struct handle_ops tcp_ops;
 extern struct handle_ops udp_ops;
 extern struct handle_ops udpsrv_ops;
-extern struct hadnle_ops udppacket_ops;
+extern struct handle_ops udppacket_ops;
 extern struct handle_ops thread_ops;
 extern struct handle_ops proc_ops;
 extern struct handle_ops mutex_ops;
@@ -57,6 +58,7 @@ const struct handle_ops * pal_handle_ops [PAL_HANDLE_TYPE_BOUND] = {
             [pal_type_pipecli]   = &pipe_ops,
             [pal_type_pipeprv]   = &pipeprv_ops,
             [pal_type_dev]       = &dev_ops,
+            [pal_type_debug]     = &debug_ops,
             [pal_type_dir]       = &dir_ops,
             [pal_type_tcp]       = &tcp_ops,
             [pal_type_tcpsrv]    = &tcp_ops,
@@ -104,6 +106,13 @@ static int parse_stream_uri(const char ** uri, char ** prefix,
             else if (strpartcmp_static(u, "gipc"))
                 hops = &gipc_ops;
             break;
+
+        case 5:
+            if (strpartcmp_static(u, "debug"))
+                hops = &debug_ops;
+            printf("debug ops set\n");
+            p+=4;
+            u+=6;
 
         case 7:
             if (strpartcmp_static(u, "tcp.srv"))
@@ -208,6 +217,7 @@ DkStreamWaitForClient (PAL_HANDLE handle)
     PAL_HANDLE client;
     int ret = _DkStreamWaitForClient(handle, &client);
 
+    printf("%s, %d, %d\n", __FUNCTION__, __LINE__, ret);
     if (ret < 0) {
         _DkRaiseFailure(-ret);
         client = NULL;
@@ -314,6 +324,7 @@ DkStreamRead (PAL_HANDLE handle, PAL_NUM offset, PAL_NUM count,
     LEAVE_PAL_CALL_RETURN(ret);
 }
 
+
 /* _DkStreamWrite for internal use, write to stream at absolute offset.
    The actual behavior of stream write is defined by handler */
 int64_t _DkStreamWrite (PAL_HANDLE handle, uint64_t offset, uint64_t count,
@@ -346,6 +357,7 @@ int64_t _DkStreamWrite (PAL_HANDLE handle, uint64_t offset, uint64_t count,
 
     return ret ? ret : -PAL_ERROR_ENDOFSTREAM;
 }
+
 
 /* PAL call DkStreamWrite: Write to stream at absolute offset. Return number
    of bytes if succeeded, or 0 for failure. Error code is notified. */

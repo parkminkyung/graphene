@@ -55,6 +55,7 @@ enum {
     OCALL_RENAME,
     OCALL_DELETE,
     OCALL_LOAD_DEBUG,
+    OCALL_WRITE2,
     OCALL_NR,
 };
 
@@ -110,6 +111,13 @@ typedef struct {
     const void * ms_buf;
     unsigned int ms_count;
 } ms_ocall_write_t;
+
+typedef struct {
+    int ms_fd;
+    const void * ms_buf;
+    unsigned int ms_count;
+} ms_ocall_write2_t;
+
 
 typedef struct {
     int ms_fd;

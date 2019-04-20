@@ -114,6 +114,7 @@ int _DkVirtualMemoryFree (void * addr, uint64_t size)
     if (sgx_is_within_enclave(addr, size)) {
         free_pages(addr, size);
     } else {
+        printf("OCALL!! free from untrusted mapping\n");
         /* Possible to have untrusted mapping. Simply unmap
            the memory outside the enclave */
         ocall_unmap_untrusted(addr, size);

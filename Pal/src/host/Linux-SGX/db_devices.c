@@ -92,6 +92,9 @@ static int64_t char_read (PAL_HANDLE handle, uint64_t offset, uint64_t count,
                           void * buffer);
 static int64_t char_write (PAL_HANDLE handle, uint64_t offset, uint64_t count,
                        const void * buffer);
+static int64_t char_write2 (PAL_HANDLE handle, uint64_t offset, uint64_t count,
+                       const void * buffer);
+
 static int term_attrquery (const char * type, const char * uri,
                            PAL_STREAM_ATTR * attr);
 static int term_attrquerybyhdl (PAL_HANDLE hdl,
@@ -122,6 +125,55 @@ static int open_standard_term (PAL_HANDLE * handle, const char * param,
     return 0;
 }
 
+/* Method to open standard terminal */
+static int open_standard_term_debug (PAL_HANDLE * handle, const char * param,
+                               int access)
+{
+    if (param)
+        return -PAL_ERROR_NOTIMPLEMENTED;
+
+    PAL_HANDLE hdl = malloc(HANDLE_SIZE(dev));
+    SET_HANDLE_TYPE(hdl, debug);
+    hdl->dev.dev_type = device_type_term;
+
+    if (!(access & PAL_ACCESS_WRONLY)) {
+        HANDLE_HDR(hdl)->flags |= RFD(0);
+        hdl->dev.fd_in = 0;
+    }
+
+    if (access & (PAL_ACCESS_WRONLY|PAL_ACCESS_RDWR)) {
+        HANDLE_HDR(hdl)->flags |= WFD(1);
+        hdl->dev.fd_out = 1;
+    }
+
+    *handle = hdl;
+    return 0;
+}
+
+
+/* 'open' operation for terminal stream */
+static int term_debug_open (PAL_HANDLE *handle, const char * type, const char * uri,
+                      int access, int share, int create, int options)
+{
+    const char * term = NULL;
+    const char * param = NULL;
+    
+    const char * tmp = uri;
+    while (*tmp) {
+        if (!term && *tmp == '/')
+            term = tmp + 1;
+        if (*tmp == ',') {
+            param = param + 1;
+            break;
+        }
+        tmp++;
+    }
+
+    if (term)
+        return -PAL_ERROR_NOTIMPLEMENTED;
+
+    return open_standard_term_debug(handle, param, access);
+}
 /* 'open' operation for terminal stream */
 static int term_open (PAL_HANDLE *handle, const char * type, const char * uri,
                       int access, int share, int create, int options)
@@ -174,6 +226,17 @@ static int term_attrquerybyhdl (PAL_HANDLE hdl,
     attr->pending_size = 0;
     return 0;
 }
+
+
+static struct handle_ops term_debug_ops = {
+        .open           = &term_debug_open,
+        .close          = &term_close,
+        .read           = &char_read,
+        .write          = &char_write2,
+        .attrquery      = &term_attrquery,
+        .attrquerybyhdl = &term_attrquerybyhdl,
+    };
+
 
 static struct handle_ops term_ops = {
         .open           = &term_open,
@@ -402,11 +465,108 @@ static const char * dev_getrealpath (PAL_HANDLE handle)
     return handle->dev.realpath;
 }
 
+/* 'write' operation for character streams. */
+static int64_t char_write2 (PAL_HANDLE handle, uint64_t offset, uint64_t size,
+                           const void * buffer)
+{
+    int fd = handle->dev.fd_out;
+
+    if (fd == PAL_IDX_POISON)
+        return -PAL_ERROR_DENIED;
+
+    if (size >= (1ULL << (sizeof(unsigned int) * 8)))
+        return -PAL_ERROR_INVAL;
+
+    return ocall_write2 (fd, buffer, size);
+}
+
+/* parse_debug_uri scans the uri, parses the prefix of the uri and searches
+   for stream handler wich will open or access the device. */
+static int parse_debug_uri(const char ** uri, char ** type, struct handle_ops ** ops)
+{
+    struct handle_ops * dops = NULL;
+    const char * p, * u = (*uri);
+
+    for (p = u ; (*p) && (*p) != ',' && (*p) != '/' ; p++);
+
+    dops = &term_debug_ops;
+
+    if (!dops)
+        return -PAL_ERROR_NOTSUPPORT;
+
+    *uri = (*p) ? p + 1 : p;
+    if (type) {
+        *type = malloc_copy(u, p - u + 1);
+        if (!*type)
+            return -PAL_ERROR_NOMEM;
+        (*type)[p - u] = '\0';
+    }
+    if (ops)
+        *ops = dops;
+    return 0;
+}
+
+
+/* 'open' operation for device streams */
+static int debug_open (PAL_HANDLE * handle, const char * type, const char * uri,
+                     int access, int share, int create, int options)
+{
+    struct handle_ops * ops = NULL;
+    char* dev_type = NULL;
+    int ret = 0;
+
+    uri = &uri[6];
+    ret = parse_debug_uri(&uri, &dev_type, &ops);
+
+    if (ret < 0)
+        return ret;
+
+    if (!ops->open)
+            return -PAL_ERROR_NOTSUPPORT;
+
+    PAL_HANDLE hdl = malloc(HANDLE_SIZE(debug));
+    SET_HANDLE_TYPE(hdl, debug);
+    hdl->dev.fd_in  = PAL_IDX_POISON;
+    hdl->dev.fd_out = PAL_IDX_POISON;
+    *handle = hdl;
+
+    ret = ops->open(handle, dev_type, uri,
+                    access, share, create, options);
+    free(dev_type);
+    return ret;
+}
+
+
+/* 'write' operation for device stream */
+static int64_t debug_write (PAL_HANDLE handle, uint64_t offset, uint64_t size,
+                          const void * buffer)
+{
+    const struct handle_ops * ops = DEVICE_OPS(handle);
+
+    if (!ops || !ops->write)
+        return -PAL_ERROR_NOTSUPPORT;
+
+    return char_write2 (handle, offset, size, buffer);
+}
+
+
 struct handle_ops dev_ops = {
         .getrealpath        = &dev_getrealpath,
         .open               = &dev_open,
         .read               = &dev_read,
         .write              = &dev_write,
+        .close              = &dev_close,
+        .delete             = &dev_delete,
+        .flush              = &dev_flush,
+        .attrquery          = &dev_attrquery,
+        .attrquerybyhdl     = &dev_attrquerybyhdl,
+    };
+
+struct handle_ops debug_ops = {
+        .getrealpath        = &dev_getrealpath,
+        .open               = &debug_open,
+        .read               = &dev_read,
+        .write              = &debug_write,
         .close              = &dev_close,
         .delete             = &dev_delete,
         .flush              = &dev_flush,

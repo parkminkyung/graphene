@@ -119,6 +119,13 @@ typedef struct pal_handle
         } dev;
 
         struct {
+            PAL_IDX fd_in, fd_out;
+            PAL_IDX dev_type;
+            PAL_BOL destroy;
+            PAL_STR realpath;
+        } debug;
+
+        struct {
             PAL_IDX fd;
             PAL_STR realpath;
             PAL_PTR buf;
@@ -151,6 +158,7 @@ typedef struct pal_handle
             PAL_IDX cargo;
             PAL_IDX pid;
             PAL_BOL nonblocking;
+            PAL_IDX proc_state;
         } process;
 
         struct {

@@ -243,6 +243,39 @@ int ocall_read (int fd, void * buf, unsigned int count)
     return retval;
 }
 
+int ocall_write2 (int fd, const void * buf, unsigned int count)
+{
+    int retval = 0;
+    void * obuf = NULL;
+
+    if (count > 4096) {
+        retval = ocall_alloc_untrusted(ALLOC_ALIGNUP(count), &obuf);
+        if (retval < 0)
+            return retval;
+    }
+
+    ms_ocall_write2_t * ms;
+    OCALLOC(ms, ms_ocall_write2_t *, sizeof(*ms));
+
+    ms->ms_fd = fd;
+    if (obuf) {
+        ms->ms_buf = obuf;
+        memcpy(obuf, buf, count);
+    } else {
+        ms->ms_buf = COPY_TO_USER(buf, count);
+    }
+    ms->ms_count = count;
+
+    retval = SGX_OCALL(OCALL_WRITE2, ms);
+    OCALL_EXIT();
+
+    if (obuf)
+        ocall_unmap_untrusted(obuf, ALLOC_ALIGNUP(count));
+
+    return retval;
+}
+
+
 int ocall_write (int fd, const void * buf, unsigned int count)
 {
     int retval = 0;

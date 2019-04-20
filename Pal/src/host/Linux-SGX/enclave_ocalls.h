@@ -33,6 +33,7 @@ int ocall_close (int fd);
 int ocall_read (int fd, void * buf, unsigned int count);
 
 int ocall_write (int fd, const void * buf, unsigned int count);
+int ocall_write2 (int fd, const void * buf, unsigned int count);
 
 int ocall_fstat (int fd, struct stat * buf);
 
