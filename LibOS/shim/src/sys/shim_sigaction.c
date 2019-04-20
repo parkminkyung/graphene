@@ -109,6 +109,12 @@ int shim_do_sigprocmask (int how, const __sigset_t * set, __sigset_t * oldset)
     if (oldset && test_user_memory(oldset, sizeof(*oldset), false))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     struct shim_thread * cur = get_cur_thread();
     int err = 0;
 
@@ -157,6 +163,13 @@ int shim_do_sigaltstack (const stack_t * ss, stack_t * oss)
     if (ss && (ss->ss_flags & ~SS_DISABLE))
         return -EINVAL;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_thread * cur = get_cur_thread();
     lock(cur->lock);
 
@@ -181,6 +194,13 @@ int shim_do_sigsuspend (const __sigset_t * mask)
     if (!mask || test_user_memory((void *) mask, sizeof(*mask), false))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     __sigset_t * old, tmp;
     struct shim_thread * cur = get_cur_thread();
 
@@ -204,6 +224,13 @@ int shim_do_sigpending (__sigset_t * set, size_t sigsetsize)
 {
     if (!set || test_user_memory(set, sizeof(*set), false))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct shim_thread * cur = get_cur_thread();
 
@@ -487,6 +514,13 @@ int shim_do_kill (pid_t pid, int sig)
     if (sig < 0 || sig > NUM_SIGS)
         return -EINVAL;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_thread * cur = get_cur_thread();
     int ret = 0;
     bool send_to_self = false;
@@ -574,6 +608,13 @@ int shim_do_tkill (pid_t tid, int sig)
     if (tid <= 0)
         return -EINVAL;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_thread * cur = get_cur_thread();
 
     if (tid == cur->tid) {
@@ -596,6 +637,13 @@ int shim_do_tgkill (pid_t tgid, pid_t tid, int sig)
 
     if (tgid < -1 || tgid == 0 || tid <= 0)
         return -EINVAL;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (tgid == -1)
         tgid = 0;

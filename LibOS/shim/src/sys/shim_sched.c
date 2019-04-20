@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_table.h>
 #include <api.h>
 #include <pal.h>
@@ -32,6 +33,14 @@
 
 int shim_do_sched_yield (void)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     DkThreadYieldExecution();
     return 0;
 }
@@ -39,6 +48,14 @@ int shim_do_sched_yield (void)
 int shim_do_sched_getaffinity (pid_t pid, size_t len,
                                __kernel_cpu_set_t * user_mask_ptr)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     int ncpus = PAL_CB(cpu_info.cpu_num);
     // Check that user_mask_ptr is valid; if not, should return -EFAULT
     if (test_user_memory(user_mask_ptr, len, 1))

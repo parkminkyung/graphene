@@ -346,6 +346,13 @@ END_CP_FUNC(gipc)
 BEGIN_RS_FUNC(gipc)
 {
 #if HASH_GIPC == 1
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     struct shim_gipc_entry * entry = (void *) (base + GET_CP_FUNC_ENTRY());
 
     PAL_FLG pal_prot = PAL_PROT(entry->prot, 0);
@@ -372,6 +379,12 @@ static int send_checkpoint_by_gipc (PAL_HANDLE gipc_store,
     PAL_PTR hdr_addr = (PAL_PTR) store->base;
     PAL_NUM hdr_size = (PAL_NUM) store->offset + store->mem_size;
     assert(ALIGNED(hdr_addr));
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     int mem_nentries = store->mem_nentries;
 
@@ -443,6 +456,13 @@ static int send_checkpoint_by_gipc (PAL_HANDLE gipc_store,
 static int send_checkpoint_on_stream (PAL_HANDLE stream,
                                       struct shim_cp_store * store)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     int mem_nentries = store->mem_nentries;
     struct shim_mem_entry ** mem_entries;
 
@@ -513,6 +533,12 @@ static int restore_gipc (PAL_HANDLE gipc, struct gipc_header * hdr, ptr_t base,
     struct shim_gipc_entry * gipc_entries = (void *) (base + hdr->entoffset);
     int nentries = hdr->nentries;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     if (!nentries)
         return 0;
 
@@ -562,6 +588,12 @@ int restore_checkpoint (struct cp_header * cphdr, struct mem_header * memhdr,
     ptr_t * offset = &cpoffset;
     long rebase = base - (ptr_t) cphdr->addr;
     int ret = 0;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     if (type)
         debug("restore checkpoint at %p rebased from %p (%s only)\n",
@@ -636,6 +668,12 @@ int init_from_checkpoint_file (const char * filename,
 {
     struct shim_dentry * dir = NULL;
     int ret;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     /* XXX: Not sure what to do here yet */
     assert(0);
@@ -738,6 +776,12 @@ int send_handles_on_stream (PAL_HANDLE stream, struct shim_cp_store * store)
     if (!nentries)
         return 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     struct shim_palhdl_entry ** entries =
             __alloca(sizeof(struct shim_palhdl_entry *) * nentries);
 
@@ -767,6 +811,12 @@ int receive_handles_on_stream (struct palhdl_header * hdr, ptr_t base,
     struct shim_palhdl_entry * palhdl_entries =
                             (void *) (base + hdr->entoffset);
     int nentries = hdr->nentries;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     if (!nentries)
         return 0;
@@ -893,6 +943,12 @@ int do_migrate_process (int (*migrate) (struct shim_cp_store *,
     struct newproc_header hdr;
     int bytes;
     memset(&hdr, 0, sizeof(hdr));
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
 #ifdef PROFILE
     unsigned long begin_create_time = GET_PROFILE_INTERVAL();

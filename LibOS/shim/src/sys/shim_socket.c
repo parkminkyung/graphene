@@ -120,6 +120,13 @@ int shim_do_socket (int family, int type, int protocol)
     if (!hdl)
         return -ENOMEM;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_sock_handle * sock = &hdl->info.sock;
     hdl->type = TYPE_SOCK;
     set_handle_fs(hdl, &socket_builtin_fs);
@@ -471,6 +478,13 @@ int shim_do_bind (int sockfd, struct sockaddr * addr, socklen_t addrlen)
     if (!hdl)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (hdl->type != TYPE_SOCK) {
         put_handle(hdl);
         return -ENOTSOCK;
@@ -671,6 +685,13 @@ int shim_do_listen (int sockfd, int backlog)
     if (!hdl)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (hdl->type != TYPE_SOCK) {
         put_handle(hdl);
         return -ENOTSOCK;
@@ -733,6 +754,13 @@ int shim_do_connect (int sockfd, struct sockaddr * addr, int addrlen)
         put_handle(hdl);
         return -ENOTSOCK;
     }
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct shim_sock_handle * sock = &hdl->info.sock;
     lock(hdl->lock);
@@ -1217,6 +1245,13 @@ int shim_do_accept (int fd, struct sockaddr * addr, socklen_t * addrlen)
     if (!hdl)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     int ret = __do_accept(hdl, flags & O_CLOEXEC,
             addr, addrlen);
     put_handle(hdl);
@@ -1229,6 +1264,13 @@ int shim_do_accept4 (int fd, struct sockaddr * addr, socklen_t * addrlen,
     struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
     if (!hdl)
         return -EBADF;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret = __do_accept(hdl,
             (flags & SOCK_CLOEXEC ? O_CLOEXEC : 0) |
@@ -1593,6 +1635,13 @@ int shim_do_shutdown (int sockfd, int how)
     if (!hdl)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     int ret = 0;
     struct shim_sock_handle * sock = &hdl->info.sock;
 
@@ -1649,6 +1698,13 @@ int shim_do_getsockname (int sockfd, struct sockaddr * addr, int * addrlen)
     if (test_user_memory(addr, *addrlen, true))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_handle * hdl = get_fd_handle(sockfd, NULL, NULL);
     if (!hdl)
         return -EBADF;
@@ -1692,6 +1748,13 @@ int shim_do_getpeername (int sockfd, struct sockaddr * addr, int * addrlen)
     struct shim_handle * hdl = get_fd_handle(sockfd, NULL, NULL);
     if (!hdl)
         return -EBADF;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret = -EINVAL;
 
@@ -1906,6 +1969,13 @@ int shim_do_setsockopt (int fd, int level, int optname, char * optval,
     if (!hdl)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     int ret = 0;
 
     if (hdl->type != TYPE_SOCK) {
@@ -1955,6 +2025,13 @@ int shim_do_getsockopt (int fd, int level, int optname, char * optval,
     struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
     if (!hdl)
         return -EBADF;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret = 0;
 

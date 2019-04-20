@@ -28,6 +28,7 @@
 #include <shim_thread.h>
 #include <shim_handle.h>
 #include <shim_fs.h>
+#include <shim_ipc.h>
 
 #include <pal.h>
 #include <pal_error.h>
@@ -306,6 +307,13 @@ int shim_do_ioctl (int fd, int cmd, unsigned long arg)
     struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
     if (!hdl)
         return -EBADF;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret = -EAGAIN;
     switch(cmd) {

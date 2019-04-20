@@ -112,6 +112,13 @@ static LISTP_TYPE(ns_query) ns_queries;
 
 static inline LEASETYPE get_lease (void)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     return DkSystemTimeQuery() + CONCAT2(NS_CAP, LEASE_TIME);
 }
 
@@ -839,6 +846,12 @@ static int connect_ns (IDTYPE * vmid, struct shim_ipc_port ** portptr)
     __discover_ns(true, false); // This function cannot be called with cur_process.lock held
     lock(cur_process.lock);
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     if (!NS_LEADER) {
         unlock(cur_process.lock);
         return -ESRCH;
@@ -915,6 +928,12 @@ static int connect_owner (IDTYPE idx, struct shim_ipc_port ** portptr,
     struct shim_ipc_info * info = NULL;
     struct CONCAT2(NS, range) range;
     memset(&range, 0, sizeof(struct CONCAT2(NS, range)));
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     int ret = CONCAT3(get, NS, range) (idx, &range, &info);
     if (ret == -ESRCH) {

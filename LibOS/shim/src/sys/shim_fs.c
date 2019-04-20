@@ -26,6 +26,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_table.h>
 #include <shim_utils.h>
 #include <shim_thread.h>
@@ -51,6 +52,13 @@ int shim_do_unlink (const char * file)
 
     if (test_user_string(file))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct shim_dentry * dent = NULL;
     int ret = 0;
@@ -86,6 +94,13 @@ int shim_do_unlinkat (int dfd, const char * pathname, int flag)
 
     if (flag & ~AT_REMOVEDIR)
         return -EINVAL;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (*pathname == '/')
         return (flag & AT_REMOVEDIR) ? shim_do_rmdir(pathname) :
@@ -133,6 +148,14 @@ out:
 
 int shim_do_mkdir (const char * pathname, int mode)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     return open_namei(NULL, NULL, pathname, O_CREAT|O_EXCL|O_DIRECTORY,
                       mode, NULL);
 }
@@ -144,6 +167,13 @@ int shim_do_mkdirat (int dfd, const char * pathname, int mode)
 
     if (test_user_string(pathname))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (*pathname == '/')
         return shim_do_mkdir(pathname, mode);
@@ -171,6 +201,13 @@ int shim_do_rmdir (const char * pathname)
 
     if (test_user_string(pathname))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if ((ret = path_lookupat(NULL, pathname, LOOKUP_OPEN|LOOKUP_DIRECTORY,
                              &dent, NULL)) < 0)
@@ -218,6 +255,13 @@ int shim_do_chmod (const char * path, mode_t mode)
     if (test_user_string(path))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if ((ret = path_lookupat(NULL, path, LOOKUP_OPEN, &dent, NULL)) < 0)
         return ret;
 
@@ -241,6 +285,13 @@ int shim_do_fchmodat (int dfd, const char * filename, mode_t mode)
 
     if (test_user_string(filename))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (*filename == '/')
         return shim_do_chmod(filename, mode);
@@ -275,6 +326,13 @@ int shim_do_fchmod (int fd, mode_t mode)
     if (!hdl)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_dentry * dent = hdl->dentry;
     int ret = 0;
 
@@ -302,6 +360,13 @@ int shim_do_chown (const char * path, uid_t uid, gid_t gid)
     if (test_user_string(path))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if ((ret = path_lookupat(NULL, path, LOOKUP_OPEN, &dent, NULL)) < 0)
         return ret;
 
@@ -318,6 +383,13 @@ int shim_do_fchownat (int dfd, const char * filename, uid_t uid, gid_t gid,
 
     if (test_user_string(filename))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (*filename == '/')
         return shim_do_chown(filename, uid, gid);
@@ -707,6 +779,13 @@ int shim_do_rename (const char * oldname, const char * newname)
         goto out;
     }
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//  goto out      return -ECANCELED;
+    }
+
+
     if ((ret = path_lookupat(NULL, newname, LOOKUP_OPEN|LOOKUP_CREATE,
                              &new_dent, NULL)) < 0) {
         // It is now ok for pathlookupat to return ENOENT with a negative DETRY
@@ -736,6 +815,13 @@ int shim_do_renameat (int olddfd, const char * pathname, int newdfd,
     struct shim_dentry * old_dir = NULL, * old_dent = NULL;
     struct shim_dentry * new_dir = NULL, * new_dent = NULL;
     int ret = 0;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+ ; //  goto out      return -ECANCELED;
+    }
+
 
     if ((ret = path_startat(olddfd, &old_dir)) < 0)
         goto out;
@@ -779,6 +865,13 @@ ssize_t shim_do_sendfile (int ofd, int ifd, off_t * offset,
     if (!hdli || !hdlo)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     off_t old_offset = 0;
     int ret = -EACCES;
 
@@ -809,6 +902,14 @@ int shim_do_chroot (const char * filename)
 {
     int ret = 0;
     struct shim_dentry * dent = NULL;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if ((ret = path_lookupat(NULL, filename, 0 , &dent, NULL)) < 0)
         goto out;
 

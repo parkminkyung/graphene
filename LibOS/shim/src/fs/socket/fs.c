@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_fs.h>
 #include <shim_profile.h>
 
@@ -158,6 +159,13 @@ static int socket_read (struct shim_handle * hdl, void * buf,
     if (!count)
         return 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     // mkpark
     lock(hdl->lock);
 
@@ -204,6 +212,13 @@ static int socket_write (struct shim_handle * hdl, const void * buf,
 {
     debug("socket_write entered!\n");
     struct shim_sock_handle * sock = &hdl->info.sock;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     // mkpark
     lock(hdl->lock);
@@ -257,6 +272,13 @@ static int socket_hstat (struct shim_handle * hdl, struct stat * stat)
     if (!stat)
         return 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     PAL_STREAM_ATTR attr;
 
     if (!DkStreamAttributesQuerybyHandle(hdl->pal_handle, &attr))
@@ -281,6 +303,13 @@ static int socket_poll (struct shim_handle * hdl, int poll_type)
 {
     struct shim_sock_handle * sock = &hdl->info.sock;
     int ret = 0;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     lock(hdl->lock);
 
@@ -359,6 +388,13 @@ static int socket_setflags (struct shim_handle * hdl, int flags)
     if (!hdl->pal_handle)
         return 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     PAL_STREAM_ATTR attr;
 
     if (!DkStreamAttributesQuerybyHandle(hdl->pal_handle, &attr))
@@ -395,6 +431,13 @@ static int socket_read_nonuser_data (struct shim_handle * hdl, void * buf,
     debug("entered %s \n", __FUNCTION__);
     int bytes = 0;
     struct shim_sock_handle * sock = &hdl->info.sock;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (!count)
         return 0;

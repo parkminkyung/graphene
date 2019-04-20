@@ -237,6 +237,14 @@ static void __try_create_lock (void)
 
 int shim_do_semget (key_t key, int nsems, int semflg)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     IDTYPE semid = 0;
     int ret;
@@ -375,6 +383,14 @@ static int __do_semop (int semid, struct sembuf * sops, unsigned int nsops,
 
 int shim_do_semop (int semid, struct sembuf * sops, unsigned int nsops)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     return __do_semop(semid, sops, nsops, IPC_SEM_NOTIMEOUT);
 }
@@ -382,6 +398,14 @@ int shim_do_semop (int semid, struct sembuf * sops, unsigned int nsops)
 int shim_do_semtimedop (int semid, struct sembuf * sops, unsigned int nsops,
                         const struct timespec * timeout)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     return __do_semop(semid, sops, nsops,
                       timeout->tv_sec * 1000000000ULL + timeout->tv_nsec);
@@ -389,6 +413,14 @@ int shim_do_semtimedop (int semid, struct sembuf * sops, unsigned int nsops,
 
 int shim_do_semctl (int semid, int semnum, int cmd, unsigned long arg)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     struct shim_sem_handle * sem;
     int ret;

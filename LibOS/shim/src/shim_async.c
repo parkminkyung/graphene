@@ -25,6 +25,7 @@
 
 #include <shim_internal.h>
 #include <shim_utils.h>
+#include <shim_ipc.h>
 #include <shim_thread.h>
 
 #include <pal.h>
@@ -58,6 +59,14 @@ int64_t install_async_event (PAL_HANDLE object, unsigned long time,
                               void (*callback) (IDTYPE caller, void * arg),
                               void * arg)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct async_event * event =
                     malloc(sizeof(struct async_event));
 
@@ -139,6 +148,12 @@ static void shim_async_helper (void * arg)
     struct shim_thread * self = (struct shim_thread *) arg;
     if (!arg)
         return;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     __libc_tcb_t tcb;
     allocate_tls(&tcb, false, self);

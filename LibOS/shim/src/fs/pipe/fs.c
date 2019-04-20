@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_thread.h>
 #include <shim_handle.h>
 #include <shim_fs.h>
@@ -50,6 +51,12 @@ static int pipe_read (struct shim_handle * hdl, void * buf,
 {
     int rv = 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     if (!count)
         goto out;
 
@@ -64,6 +71,12 @@ static int pipe_write (struct shim_handle * hdl, const void * buf,
 {
     if (!count)
         return 0;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     int bytes = DkStreamWrite(hdl->pal_handle, 0, count, (void *) buf, NULL);
 
@@ -114,6 +127,12 @@ static int pipe_poll (struct shim_handle * hdl, int poll_type)
         goto out;
     }
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     PAL_STREAM_ATTR attr;
     if (!DkStreamAttributesQuerybyHandle(hdl->pal_handle, &attr)) {
         ret = -PAL_ERRNO;
@@ -144,6 +163,12 @@ static int pipe_setflags (struct shim_handle * hdl, int flags)
         return 0;
 
     PAL_STREAM_ATTR attr;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     if (!DkStreamAttributesQuerybyHandle(hdl->pal_handle, &attr))
         return -PAL_ERRNO;

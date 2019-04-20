@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_utils.h>
 #include <shim_table.h>
 #include <shim_handle.h>
@@ -38,6 +39,13 @@
 
 int shim_do_pause (void)
 {
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     while (1) {
         unsigned long ret = DkThreadDelayExecution(SHIM_DEFAULT_SLEEP);
 
@@ -53,6 +61,13 @@ int shim_do_nanosleep (const struct __kernel_timespec * rqtp,
 {
     if (!rqtp)
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     unsigned long time = rqtp->tv_sec * 1000000L + rqtp->tv_nsec / 1000;
     unsigned long ret = DkThreadDelayExecution(time);

@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_table.h>
 #include <shim_thread.h>
 #include <shim_handle.h>
@@ -43,6 +44,13 @@ int shim_do_access (const char * file, mode_t mode)
     if (test_user_string(file))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_dentry * dent = NULL;
     int ret = 0;
 
@@ -60,6 +68,13 @@ int shim_do_faccessat (int dfd, const char * filename, mode_t mode)
 
     if (test_user_string(filename))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (*filename == '/')
         return shim_do_access(filename, mode);

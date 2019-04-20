@@ -25,6 +25,7 @@
 
 #include <shim_internal.h>
 #include <shim_table.h>
+#include <shim_ipc.h>
 #include <shim_utils.h>
 #include <shim_thread.h>
 #include <shim_handle.h>
@@ -392,6 +393,13 @@ int shim_do_poll (struct pollfd * fds, nfds_t nfds, int timeout)
 {
     struct shim_thread * cur = get_cur_thread();
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct poll_handle * polls =
             __try_alloca(cur, sizeof(struct poll_handle) * nfds);
 
@@ -436,6 +444,13 @@ int shim_do_ppoll (struct pollfd * fds, int nfds, struct timespec * tsp,
                    const __sigset_t * sigmask, size_t sigsetsize)
 {
     struct shim_thread * cur = get_cur_thread();
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct poll_handle * polls =
             __try_alloca(cur, sizeof(struct poll_handle) * nfds);
@@ -522,6 +537,13 @@ int shim_do_select (int nfds, fd_set * readfds, fd_set * writefds,
 {
     BEGIN_PROFILE_INTERVAL();
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (!nfds) {
         if (!tsv)
             return -EINVAL;
@@ -601,6 +623,14 @@ int shim_do_pselect6 (int nfds, fd_set * readfds, fd_set * writefds,
                       fd_set * errorfds, const struct __kernel_timespec * tsp,
                       const __sigset_t * sigmask)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (!nfds)
         return tsp ? shim_do_nanosleep (tsp, NULL) : -EINVAL;
 

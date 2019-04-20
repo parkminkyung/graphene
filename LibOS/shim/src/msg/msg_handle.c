@@ -5,6 +5,7 @@
 #include <shim_thread.h>
 #include <shim_handle.h>
 #include <shim_fs.h>
+#include <shim_ipc.h>
 #include <shim_profile.h>
 
 #include <pal.h>
@@ -31,6 +32,12 @@ size_t shim_do_extend_request(int fd, const void * buf, size_t count)
 	if (!buf || test_user_memory((void *) buf, count, false))
 		return -EFAULT;
 
+	enum process_state proc_state = cur_process.state; 
+	if (proc_state == CONFINED){
+		debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+	}
+
+
 	struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
 	if (!hdl)
 		return -EBADF;
@@ -52,15 +59,27 @@ size_t shim_do_extend_request(int fd, const void * buf, size_t count)
 
 	put_handle(hdl);
 
+	cur_process.state = CONFINED;
+
+	debug("%s:%d: confine it!\n", __FUNCTION__, __LINE__);
+
+
+
 	return ret;
 }
 
 
 size_t shim_do_send_response(int fd, const void * buf, size_t count)
 {
-debug("%s\n", __FUNCTION__);
+	debug("%s\n", __FUNCTION__);
 	if (!buf || test_user_memory((void *) buf, count, false))
 		return -EFAULT;
+
+	enum process_state proc_state = cur_process.state; 
+	if (proc_state == CONFINED){
+		debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+	}
+
 
 	struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
 	if (!hdl)
@@ -90,9 +109,15 @@ debug("%s\n", __FUNCTION__);
 
 size_t shim_do_send_user_data(int fd, const void * buf, size_t count)
 {
-debug("%s\n", __FUNCTION__);
+	debug("%s\n", __FUNCTION__);
 	if (!buf || test_user_memory((void *) buf, count, false))
 		return -EFAULT;
+
+	enum process_state proc_state = cur_process.state; 
+	if (proc_state != CONFINED){
+		debug("%s:%d: not confined.. should not be called \n", __FUNCTION__, __LINE__);
+	}
+
 
 	struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
 	if (!hdl)
@@ -125,6 +150,12 @@ size_t shim_do_read_nonuser_data(int fd, void * buf, size_t count)
 	if (!buf || test_user_memory(buf, count, true))
 		return -EFAULT;
 
+	enum process_state proc_state = cur_process.state; 
+	if (proc_state == CONFINED){
+		debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+	}
+
+
 	struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
 	if (!hdl)
 		return -EBADF;
@@ -154,6 +185,12 @@ size_t shim_do_gather_response(int fd, void * buf, size_t count)
 	debug("%s\n", __FUNCTION__);
 	if (!buf || test_user_memory(buf, count, true))
 		return -EFAULT;
+
+	enum process_state proc_state = cur_process.state; 
+	if (proc_state == CONFINED){
+		debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+	}
+
 
 	struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
 	if (!hdl)
@@ -185,6 +222,12 @@ size_t shim_do_read_user_data(int fd, void * buf, size_t count)
 	if (!buf || test_user_memory(buf, count, true))
 		return -EFAULT;
 
+	enum process_state proc_state = cur_process.state; 
+	if (proc_state == CONFINED){
+		debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+	}
+
+
 	struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
 	if (!hdl)
 		return -EBADF;
@@ -205,6 +248,10 @@ size_t shim_do_read_user_data(int fd, void * buf, size_t count)
 	ret = fs->fs_ops->read_user_data(hdl, buf, count);
 
 	put_handle(hdl);
+
+	cur_process.state = CONFINED; 
+	debug("%s:%d: confine it\n", __FUNCTION__, __LINE__);
+
 	return ret;
 }
 

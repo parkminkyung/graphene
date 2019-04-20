@@ -25,6 +25,7 @@
 
 #include <shim_internal.h>
 #include <shim_thread.h>
+#include <shim_ipc.h>
 #include <shim_handle.h>
 #include <shim_vma.h>
 #include <shim_fs.h>
@@ -219,6 +220,13 @@ static int __query_attr (struct shim_dentry * dent,
     PAL_STREAM_ATTR pal_attr;
     enum shim_file_type old_type = data->type;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (pal_handle ?
         !DkStreamAttributesQuerybyHandle(pal_handle, &pal_attr) :
         !DkStreamAttributesQuery(qstrgetstr(&data->host_uri), &pal_attr))
@@ -396,6 +404,13 @@ static int __chroot_open (struct shim_dentry * dent,
     if (!uri) {
         uri = qstrgetstr(&data->host_uri);
     }
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int version = atomic_read(&data->version);
     int oldmode = flags & O_ACCMODE;
@@ -606,6 +621,13 @@ static int chroot_flush (struct shim_handle * hdl)
 {
     struct shim_file_handle * file = &hdl->info.file;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (file->buf_type == FILEBUF_MAP) {
         lock(hdl->lock);
         void * mapbuf = file->mapbuf;
@@ -725,6 +747,13 @@ static int map_write (struct shim_handle * hdl, const void * buf,
     struct shim_file_handle * file = &hdl->info.file;
     int ret = 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     lock(hdl->lock);
 
     struct shim_file_data * data = FILE_HANDLE_DATA(hdl);
@@ -778,6 +807,13 @@ static int chroot_read (struct shim_handle * hdl, void * buf,
 {
     int ret = 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (count == 0)
         goto out;
 
@@ -822,6 +858,13 @@ static int chroot_write (struct shim_handle * hdl, const void * buf,
     if (count == 0)
         return 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (NEED_RECREATE(hdl) && (ret = chroot_recreate(hdl)) < 0) {
         goto out;
     }
@@ -862,6 +905,13 @@ static int chroot_mmap (struct shim_handle * hdl, void ** addr, size_t size,
     int ret;
     if (NEED_RECREATE(hdl) && (ret = chroot_recreate(hdl)) < 0)
         return ret;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int pal_prot = PAL_PROT(prot, flags);
 
@@ -936,6 +986,13 @@ static int chroot_truncate (struct shim_handle * hdl, uint64_t len)
     if (!(hdl->acc_mode & MAY_WRITE))
         return -EINVAL;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_file_handle * file = &hdl->info.file;
     lock(hdl->lock);
 
@@ -981,6 +1038,13 @@ static int chroot_readdir (struct shim_dentry * dent,
 
     if ((ret = try_create_data(dent, NULL, 0, &data)) < 0)
         return ret;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     chroot_update_ino(dent);
     const char * uri = qstrgetstr(&data->host_uri);
@@ -1109,6 +1173,13 @@ static int chroot_checkout (struct shim_handle * hdl)
     if (hdl->fs == &chroot_builtin_fs)
         hdl->fs = NULL;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if (hdl->type == TYPE_FILE) {
         struct shim_file_data * data = FILE_HANDLE_DATA(hdl);
         if (data)
@@ -1162,6 +1233,13 @@ static int chroot_unlink (struct shim_dentry * dir, struct shim_dentry * dent)
     struct shim_file_data * data;
     if ((ret = try_create_data(dent, NULL, 0, &data)) < 0)
         return ret;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     PAL_HANDLE pal_hdl = DkStreamOpen(qstrgetstr(&data->host_uri), 0, 0, 0, 0);
     if (!pal_hdl)
@@ -1235,6 +1313,13 @@ static int chroot_rename (struct shim_dentry * old, struct shim_dentry * new)
     if ((ret = try_create_data(new, NULL, 0, &new_data)) < 0)
         return ret;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     PAL_HANDLE pal_hdl = DkStreamOpen(qstrgetstr(&old_data->host_uri),
                                       0, 0, 0, 0);
     if (!pal_hdl)
@@ -1264,6 +1349,13 @@ static int chroot_chmod (struct shim_dentry * dent, mode_t mode)
     struct shim_file_data * data;
     if ((ret = try_create_data(dent, NULL, 0, &data)) < 0)
         return ret;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     PAL_HANDLE pal_hdl = DkStreamOpen(qstrgetstr(&data->host_uri), 0, 0, 0, 0);
     if (!pal_hdl)

@@ -23,6 +23,7 @@
  * Implementation of system call "pipe", "pipe2" and "socketpair".
  */
 
+#include <shim_ipc.h>
 #include <shim_internal.h>
 #include <shim_utils.h>
 #include <shim_table.h>
@@ -36,6 +37,7 @@
 
 #include <asm/fcntl.h>
 
+// it also uses Dk... it is in shim_init.c
 int create_pipes (IDTYPE * pipeid, PAL_HANDLE * srv, PAL_HANDLE * cli,
                   struct shim_qstr * qstr, int flags)
 {
@@ -81,6 +83,13 @@ int shim_do_pipe2 (int * filedes, int flags)
 {
     if (!filedes || test_user_memory(filedes, 2 * sizeof(int), true))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret = 0;
 
@@ -152,6 +161,13 @@ int shim_do_socketpair (int domain, int type, int protocol, int * sv)
 
     if (!sv || test_user_memory(sv, 2 * sizeof(int), true))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret = 0;
     struct shim_handle * hdl1 = get_new_handle();

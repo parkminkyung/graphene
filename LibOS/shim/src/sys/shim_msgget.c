@@ -277,6 +277,14 @@ static void __try_create_lock (void)
 
 int shim_do_msgget (key_t key, int msgflg)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     IDTYPE msgid = 0;
     int ret;
@@ -373,6 +381,14 @@ out:
 
 int shim_do_msgsnd (int msqid, const void * msgp, size_t msgsz, int msgflg)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     int ret;
 
@@ -401,6 +417,14 @@ int shim_do_msgsnd (int msqid, const void * msgp, size_t msgsz, int msgflg)
 int shim_do_msgrcv (int msqid, void * msgp, size_t msgsz, long msgtype,
                     int msgflg)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     int ret;
 
@@ -423,6 +447,14 @@ int shim_do_msgrcv (int msqid, void * msgp, size_t msgsz, long msgtype,
 
 int shim_do_msgctl (int msqid, int cmd, struct msqid_ds * buf)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     INC_PROFILE_OCCURENCE(syscall_use_ipc);
     struct shim_msg_handle * msgq;
     int ret;
@@ -948,6 +980,14 @@ int store_all_msg_persist (void)
 
 int shim_do_msgpersist (int msqid, int cmd)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_msg_handle * msgq;
     struct shim_handle * hdl;
     int ret = -EINVAL;

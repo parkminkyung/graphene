@@ -54,6 +54,14 @@ int shim_do_vfork (void)
      * Because rdi might be used in SHIM, I cache rdi in r13 (reference:
      * syscallas.S).
      */
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_thread * cur_thread = get_cur_thread();
     struct shim_thread * new_thread = get_new_thread(0);
     /* put the new thread in a new process (thread group) */

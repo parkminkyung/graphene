@@ -27,6 +27,7 @@
 #include <shim_internal.h>
 #include <shim_table.h>
 #include <shim_tls.h>
+#include <shim_ipc.h>
 #include <shim_thread.h>
 #include <shim_unistd.h>
 #include <shim_utils.h>
@@ -245,10 +246,10 @@ SHIM_SYSCALL_PASSTHROUGH (shmat, 3, void *, int, shmid, const void *, shmaddr,
 SHIM_SYSCALL_PASSTHROUGH (shmctl, 3, int, int, shmid, int, cmd,
                           struct shmid_ds *, buf)
 
-/* dup: sys/shim_dup.c */
+/* dup: sys/shim_dup.c */ // ignore proc state
 DEFINE_SHIM_SYSCALL (dup, 1, shim_do_dup, int, int, fd)
 
-/* dup2: sys/shim_dup.c */
+/* dup2: sys/shim_dup.c */ // ignore proc state
 DEFINE_SHIM_SYSCALL (dup2, 2, shim_do_dup2, int, int, oldfd, int, newfd)
 
 /* pause: sys/shim_sleep.c */
@@ -271,7 +272,7 @@ DEFINE_SHIM_SYSCALL (setitimer, 3, shim_do_setitimer, int, int, which,
                      struct __kernel_itimerval *, value,
                      struct __kernel_itimerval *, ovalue)
 
-/* getpid: sys/shim_getpid.c */
+/* getpid: sys/shim_getpid.c */ // no proc state
 DEFINE_SHIM_SYSCALL (getpid, 0, shim_do_getpid, pid_t)
 
 /* sendfile: sys/shim_fs.c */
@@ -291,12 +292,14 @@ DEFINE_SHIM_SYSCALL (accept, 3, shim_do_accept, int, int, fd,
                      struct sockaddr *, addr, socklen_t *, addrlen)
 
 /* sendto: sys/shim_socket.c */
-DEFINE_SHIM_SYSCALL (sendto, 6, shim_do_sendto, ssize_t, int, fd, const void *,
+// DEFINE_SHIM_SYSCALL (sendto, 6, shim_do_sendto, ssize_t, int, fd, const void *,
+SHIM_SYSCALL_PASSTHROUGH (sendto, 6, ssize_t, int, fd, const void *,
                      buf, size_t, len, int, flags, const struct sockaddr *,
                      dest_addr, socklen_t, addrlen)
 
 /* recvfrom : sys/shim_socket.c */
-DEFINE_SHIM_SYSCALL (recvfrom, 6, shim_do_recvfrom, ssize_t, int, fd, void *,
+// DEFINE_SHIM_SYSCALL (recvfrom, 6, shim_do_recvfrom, ssize_t, int, fd, void *,
+SHIM_SYSCALL_PASSTHROUGH (recvfrom, 6, ssize_t, int, fd, void *,
                      buf, size_t, len, int, flags, struct sockaddr *, addr,
                      socklen_t *, addrlen)
 
@@ -308,11 +311,13 @@ DEFINE_SHIM_SYSCALL (bind, 3, shim_do_bind, int, int, sockfd,
 DEFINE_SHIM_SYSCALL (listen, 2, shim_do_listen, int, int, sockfd, int, backlog)
 
 /* sendmsg: sys/shim_socket.c */
-DEFINE_SHIM_SYSCALL (sendmsg, 3, shim_do_sendmsg, ssize_t, int, fd,
+//DEFINE_SHIM_SYSCALL (sendmsg, 3, shim_do_sendmsg, ssize_t, int, fd,
+SHIM_SYSCALL_PASSTHROUGH(sendmsg, 3, ssize_t, int, fd,
                      struct msghdr *, msg, int, flags)
 
 /* recvmsg: sys/shim_socket.c */
-DEFINE_SHIM_SYSCALL (recvmsg, 3, shim_do_recvmsg, ssize_t, int, fd,
+// DEFINE_SHIM_SYSCALL (recvmsg, 3, shim_do_recvmsg, ssize_t, int, fd,
+SHIM_SYSCALL_PASSTHROUGH(recvmsg, 3, ssize_t, int, fd,
                      struct msghdr *, msg, int, flags)
 
 /* shutdown: sys/shim_socket.c */
@@ -363,7 +368,7 @@ DEFINE_SHIM_SYSCALL (wait4, 4, shim_do_wait4, pid_t, pid_t, pid, int *,
 /* kill: sys/shim_sigaction.c */
 DEFINE_SHIM_SYSCALL (kill, 2, shim_do_kill, int, pid_t, pid, int, sig)
 
-/* uname: sys/shim_uname.c */
+/* uname: sys/shim_uname.c */ // no proc state
 DEFINE_SHIM_SYSCALL (uname, 1, shim_do_uname, int, struct old_utsname *, buf)
 
 /* semget: sys/shim_semget.c */
@@ -374,7 +379,7 @@ DEFINE_SHIM_SYSCALL (semget, 3, shim_do_semget, int, key_t, key, int, nsems,
 DEFINE_SHIM_SYSCALL (semop, 3, shim_do_semop, int, int, semid,
                      struct sembuf *, sops, unsigned int, nsops)
 
-/* semctl: sys/shim_semctl.c */
+/* semctl: sys/shim_semget.c */
 DEFINE_SHIM_SYSCALL (semctl, 4, shim_do_semctl, int, int, semid, int, semnum,
                      int, cmd, unsigned long, arg)
 
@@ -419,14 +424,14 @@ DEFINE_SHIM_SYSCALL (ftruncate, 2, shim_do_ftruncate, int, int, fd,
 DEFINE_SHIM_SYSCALL (getdents, 3, shim_do_getdents, size_t, int, fd,
                      struct linux_dirent *, buf, size_t, count)
 
-/* getcwd: sys/shim_getcwd.c */
+/* getcwd: sys/shim_getcwd.c no proc state */
 DEFINE_SHIM_SYSCALL (getcwd, 2, shim_do_getcwd, int, char *, buf, size_t,
                      size)
 
-/* chdir: sys/shim_getcwd.c */
+/* chdir: sys/shim_getcwd.c no proc st */
 DEFINE_SHIM_SYSCALL (chdir, 1, shim_do_chdir, int, const char *, filename)
 
-/* fchdir: sys/shim_getcwd.c */
+/* fchdir: sys/shim_getcwd.c no pstate */
 DEFINE_SHIM_SYSCALL (fchdir, 1, shim_do_fchdir, int, int, fd)
 
 /* rename: sys/shim_fs.c */
@@ -494,36 +499,36 @@ SHIM_SYSCALL_PASSTHROUGH (times, 1, int, struct tms *, tbuf)
 SHIM_SYSCALL_PASSTHROUGH (ptrace, 4, int, long, request, pid_t, pid, void *,
                           addr, void *, data)
 
-/* getuid: sys/shim_getpid.c */
+/* getuid: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (getuid, 0, shim_do_getuid, uid_t)
 
 SHIM_SYSCALL_PASSTHROUGH (syslog, 3, int, int, type, char *, buf, int, len)
 
-/* getgid: sys/shim_getgid.c */
+/* getgid: sys/shim_getgid.c no pstate */
 DEFINE_SHIM_SYSCALL (getgid, 0, shim_do_getgid, gid_t)
 
-/* setuid: sys/shim_getpid.c */
+/* setuid: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (setuid, 1, shim_do_setuid, int, uid_t, uid)
 
-/* setgid: sys/shim_getpid.c */
+/* setgid: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (setgid, 1, shim_do_setgid, int, gid_t, gid)
 
-/* geteuid: sys/shim_getpid.c */
+/* geteuid: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (geteuid, 0, shim_do_geteuid, uid_t)
 
-/* getegid: sys/shim_getpid.c */
+/* getegid: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (getegid, 0, shim_do_getegid, gid_t)
 
-/* getpgid: sys/shim_getpid.c */
+/* getpgid: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (setpgid, 2, shim_do_setpgid, int, pid_t, pid, pid_t, pgid)
 
-/* getppid: sys/shim_getpid.c */
+/* getppid: sys/shim_getpid.c */ // no proc state
 DEFINE_SHIM_SYSCALL (getppid, 0, shim_do_getppid, pid_t)
 
-/* getpgrp: sys/shim_getpid.c */
+/* getpgrp: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (getpgrp, 0, shim_do_getpgrp, pid_t)
 
-/* setsid: sys/shim_getpid.c */
+/* setsid: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (setsid, 0, shim_do_setsid, int)
 
 SHIM_SYSCALL_PASSTHROUGH (setreuid, 2, int, uid_t, ruid, uid_t, euid)
@@ -548,12 +553,14 @@ SHIM_SYSCALL_PASSTHROUGH (setresgid, 3, int, gid_t, rgid, gid_t, egid, gid_t,
 SHIM_SYSCALL_PASSTHROUGH (getresgid, 3, int, gid_t *, rgid, gid_t *, egid,
                           gid_t *, sgid)
 
+    // no pstate
 DEFINE_SHIM_SYSCALL (getpgid, 1, shim_do_getpgid, int, pid_t, pid)
 
 SHIM_SYSCALL_PASSTHROUGH (setfsuid, 1, int, uid_t, uid)
 
 SHIM_SYSCALL_PASSTHROUGH (setfsgid, 1, int, gid_t, gid)
 
+    // no pstate
 DEFINE_SHIM_SYSCALL (getsid, 1, shim_do_getsid, int, pid_t, pid)
 
 SHIM_SYSCALL_PASSTHROUGH (capget, 2, int, cap_user_header_t, header,
@@ -652,6 +659,12 @@ void * shim_do_arch_prctl (int code, void * addr)
     /* We only support set fs.  Die loudly if we see anything else. */
     assert(code == ARCH_SET_FS || code == ARCH_GET_FS);
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+;//        return -ECANCELED;
+    }
+
+
     switch (code) {
         case ARCH_SET_FS:
             if (!addr)
@@ -675,8 +688,10 @@ SHIM_SYSCALL_PASSTHROUGH (adjtimex, 1, int, struct __kernel_timex *, txc_p)
 DEFINE_SHIM_SYSCALL (setrlimit, 2, shim_do_setrlimit, int, int, resource,
                      struct __kernel_rlimit *, rlim)
 
-/* chroot: sys/shim_isolate.c */
-DEFINE_SHIM_SYSCALL (chroot, 1, shim_do_chroot, int, const char *, filename)
+/* chroot: sys/shim_fs.c */
+// DEFINE_SHIM_SYSCALL (chroot, 1, shim_do_chroot, int, const char *, filename)
+SHIM_SYSCALL_PASSTHROUGH (chroot, 1, int, const char *, filename)
+
 
 SHIM_SYSCALL_PASSTHROUGH (sync, 0, int)
 
@@ -751,7 +766,7 @@ SHIM_SYSCALL_PASSTHROUGH (nfsservctl, 3, int, int, cmd, struct nfsctl_arg *,
    TODO: security syscall is not implemented (kernel always returns -ENOSYS),
    how should we handle this?*/
 
-/* gettid: sys/shim_getpid.c */
+/* gettid: sys/shim_getpid.c */ // no proc state
 DEFINE_SHIM_SYSCALL (gettid, 0, shim_do_gettid, pid_t)
 
 SHIM_SYSCALL_PASSTHROUGH (readahead, 3, int, int, fd, loff_t, offset, size_t,
@@ -849,7 +864,7 @@ SHIM_SYSCALL_PASSTHROUGH (remap_file_pages, 5, int, void *, start, size_t, size,
 DEFINE_SHIM_SYSCALL (getdents64, 3, shim_do_getdents64, size_t, int, fd,
                      struct linux_dirent64 *, buf, size_t, count)
 
-/* set_tid_address: sys/shim_getpid.c */
+/* set_tid_address: sys/shim_getpid.c */// no proc state
 DEFINE_SHIM_SYSCALL (set_tid_address, 1, shim_do_set_tid_address, int, int *,
                      tidptr)
 
@@ -1044,7 +1059,7 @@ DEFINE_SHIM_SYSCALL (ppoll, 5, shim_do_ppoll, int, struct pollfd *, fds,
 
 SHIM_SYSCALL_PASSTHROUGH (unshare, 1, int, int, unshare_flags)
 
-/* set_robust_list: sys/shim_futex.c */
+/* set_robust_list: sys/shim_futex.c no pstate */
 DEFINE_SHIM_SYSCALL (set_robust_list, 2, shim_do_set_robust_list, int,
                      struct robust_list_head *, head, size_t, len)
 
@@ -1105,7 +1120,7 @@ SHIM_SYSCALL_PASSTHROUGH (eventfd2, 2, int, int, count, int, flags)
 /* epoll_create1: sys/shim_epoll.c */
 DEFINE_SHIM_SYSCALL (epoll_create1, 1, shim_do_epoll_create1, int, int, flags)
 
-/* dup3: sys/shim_dup.c */
+/* dup3: sys/shim_dup.c */ // ignore proc state
 DEFINE_SHIM_SYSCALL (dup3, 3, shim_do_dup3, int, int, oldfd, int, newfd,
                      int, flags)
 
@@ -1129,7 +1144,8 @@ SHIM_SYSCALL_PASSTHROUGH (perf_event_open, 5, int, struct perf_event_attr *,
                           attr_uptr, pid_t, pid, int, cpu, int, group_fd,
                           int, flags)
 
-DEFINE_SHIM_SYSCALL (recvmmsg, 5, shim_do_recvmmsg, int, int, fd,
+// DEFINE_SHIM_SYSCALL (recvmmsg, 5, shim_do_recvmmsg, int, int, fd,
+SHIM_SYSCALL_PASSTHROUGH (recvmmsg, 5, int, int, fd,
                      struct mmsghdr *, msg, int, vlen, int, flags,
                      struct __kernel_timespec *, timeout)
 
@@ -1155,7 +1171,8 @@ SHIM_SYSCALL_PASSTHROUGH (clock_adjtime, 2, int, clockid_t, which_clock,
 
 SHIM_SYSCALL_PASSTHROUGH (syncfs, 1, int, int, fd)
 
-DEFINE_SHIM_SYSCALL (sendmmsg, 4, shim_do_sendmmsg, int, int, fd,
+// DEFINE_SHIM_SYSCALL (sendmmsg, 4, shim_do_sendmmsg, int, int, fd,
+SHIM_SYSCALL_PASSTHROUGH(sendmmsg, 4, int, int, fd,
                      struct mmsghdr *, msg, int, vlen, int, flags)
 
 SHIM_SYSCALL_PASSTHROUGH (setns, 2, int, int, fd, int, nstype)
@@ -1164,7 +1181,29 @@ SHIM_SYSCALL_PASSTHROUGH (getcpu, 3, int, unsigned *, cpu, unsigned *, node,
                           struct getcpu_cache *, cache)
 
 /* libos calls */
+ SHIM_SYSCALL_PASSTHROUGH (sandbox_create, 3,  long,
+                     int, flags, const char *, fs_sb, struct net_sb *, net_sb)
 
+ SHIM_SYSCALL_PASSTHROUGH (sandbox_attach, 1, int,
+                     unsigned int, sandboxid)
+
+ SHIM_SYSCALL_PASSTHROUGH (sandbox_current, 0, long)
+
+ SHIM_SYSCALL_PASSTHROUGH (msgpersist, 2, int, int, msqid,
+                     int, cmd)
+
+ SHIM_SYSCALL_PASSTHROUGH (benchmark_rpc, 4, int, pid_t, pid,
+                     int, times, const void *, buf, size_t, size)
+
+ SHIM_SYSCALL_PASSTHROUGH (send_rpc, 3,  size_t, pid_t, pid,
+                     const void *, buf, size_t, size)
+
+ SHIM_SYSCALL_PASSTHROUGH (recv_rpc, 3, size_t, pid_t *, pid,
+                     void *, buf, size_t, size)
+
+ SHIM_SYSCALL_PASSTHROUGH (checkpoint, 1, int,
+                     const char *, filename)
+/*
 DEFINE_SHIM_SYSCALL (sandbox_create, 3, shim_do_sandbox_create, long,
                      int, flags, const char *, fs_sb, struct net_sb *, net_sb)
 
@@ -1187,8 +1226,8 @@ DEFINE_SHIM_SYSCALL (recv_rpc, 3, shim_do_recv_rpc, size_t, pid_t *, pid,
 
 DEFINE_SHIM_SYSCALL (checkpoint, 1, shim_do_checkpoint, int,
                      const char *, filename)
-
-/* mkpark: new calls for test */
+*/
+/* mkpark: new calls for test msg/msg_handle.c */
 DEFINE_SHIM_SYSCALL (send_request, 3, shim_do_send_request, size_t, int, fd, const void *,
                      buf, size_t, count)
 

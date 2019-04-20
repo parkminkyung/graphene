@@ -311,7 +311,7 @@ static int __write (void * f, void * buf, int len)
     arg->offset += bytes;
     return bytes;
 }
-
+/*
 long shim_do_sandbox_create (int flags, const char * fs_sb,
                              struct net_sb * net_sb)
 {
@@ -389,7 +389,7 @@ err:
     DkObjectClose(handle);
     return ret;
 }
-
+*/
 int shim_do_sandbox_attach (unsigned int sbid)
 {
     return -ENOSYS;

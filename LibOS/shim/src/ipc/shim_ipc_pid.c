@@ -323,6 +323,12 @@ int get_all_pid_status (struct pid_status ** status)
     if (!bufsize)
         return -ENOMEM;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     LISTP_TYPE(range) * list = &offered_ranges;
     struct range * r;
     int ret;

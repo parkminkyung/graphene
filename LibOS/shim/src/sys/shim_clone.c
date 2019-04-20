@@ -171,6 +171,13 @@ int shim_do_clone (int flags, void * user_stack_addr, int * parent_tidptr,
     int * set_parent_tid = NULL;
     int ret = 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     assert((flags & ~(CLONE_PARENT_SETTID|CLONE_CHILD_SETTID|
                       CLONE_CHILD_CLEARTID|CLONE_SETTLS|
                       CLONE_VM|CLONE_FILES|

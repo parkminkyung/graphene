@@ -177,6 +177,13 @@ struct shim_thread * get_new_thread (IDTYPE new_tid)
     if (!thread)
         return NULL;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_thread * cur_thread = get_cur_thread();
     thread->tid = new_tid;
 
@@ -249,6 +256,13 @@ struct shim_thread * get_new_internal_thread (void)
     IDTYPE new_tid = get_internal_pid();
     assert(new_tid);
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_thread * thread = alloc_new_thread();
     if (!thread)
         return NULL;
@@ -285,6 +299,14 @@ struct shim_simple_thread * lookup_simple_thread (IDTYPE tid)
 
 struct shim_simple_thread * get_new_simple_thread (void)
 {
+    
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_simple_thread * thread =
                     malloc(sizeof(struct shim_simple_thread));
 
@@ -316,6 +338,13 @@ void get_thread (struct shim_thread * thread)
 void put_thread (struct shim_thread * thread)
 {
     int ref_count = REF_DEC(thread->ref_count);
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
 #ifdef DEBUG_REF
     debug("put thread %p(%d) (ref_count = %d)\n", thread, thread->tid,
@@ -354,6 +383,13 @@ void get_simple_thread (struct shim_simple_thread * thread)
 void put_simple_thread (struct shim_simple_thread * thread)
 {
     int ref_count = REF_DEC(thread->ref_count);
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     if (!ref_count) {
         /* Simple threads always live on the simple thread list */
@@ -708,7 +744,7 @@ BEGIN_CP_FUNC(running_thread)
 }
 END_CP_FUNC(running_thread)
     
-int resume_wrapper (void * param)
+static int resume_wrapper (void * param)
 {
     struct shim_thread * thread = (struct shim_thread *) param;
     assert(thread);

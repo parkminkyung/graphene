@@ -81,6 +81,13 @@ int shim_do_execve_rtld (struct shim_handle * hdl, const char ** argv,
     struct shim_thread * cur_thread = get_cur_thread();
     int ret;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     if ((ret = close_cloexec_handle(cur_thread->handle_map)) < 0)
         return ret;
 
@@ -259,6 +266,13 @@ int shim_do_execve (const char * file, const char ** argv,
     struct shim_thread * cur_thread = get_cur_thread();
     struct shim_dentry * dent = NULL;
     int ret = 0, argc = 0;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     for (const char ** a = argv ; *a ; a++, argc++);
 

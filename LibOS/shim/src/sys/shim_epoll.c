@@ -81,6 +81,13 @@ int shim_do_epoll_create1 (int flags)
     if (!hdl)
         return -ENOMEM;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     struct shim_epoll_handle * epoll = &hdl->info.epoll;
 
     hdl->type = TYPE_EPOLL;
@@ -183,6 +190,13 @@ int shim_do_epoll_ctl (int epfd, int op, int fd,
         put_handle(epoll_hdl);
         return -EINVAL;
     }
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct shim_epoll_handle * epoll = &epoll_hdl->info.epoll;
     struct shim_epoll_fd * epoll_fd;
@@ -298,6 +312,13 @@ int shim_do_epoll_wait (int epfd, struct __kernel_epoll_event * events,
         put_handle(epoll_hdl);
         return -EINVAL;
     }
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct shim_epoll_handle * epoll = &epoll_hdl->info.epoll;
     struct shim_epoll_fd * epoll_fd;

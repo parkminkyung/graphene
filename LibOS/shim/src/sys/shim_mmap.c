@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_table.h>
 #include <shim_handle.h>
 #include <shim_vma.h>
@@ -123,6 +124,14 @@ void * shim_do_mmap (void * addr, size_t length, int prot, int flags, int fd,
                 ret = -PAL_ERRNO;
         }
     } else {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
         ret = hdl->fs->fs_ops->mmap(
             hdl, &ret_addr, length, PAL_PROT(prot, flags), flags, offset);
     }

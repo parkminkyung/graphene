@@ -69,6 +69,13 @@ int shim_do_futex (int * uaddr, int op, int val, void * utime,
     if (!uaddr || ((uintptr_t) uaddr % sizeof(unsigned int)))
         return -EINVAL;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     create_lock_runtime(&futex_list_lock);
     lock(futex_list_lock);
 
@@ -337,6 +344,13 @@ int shim_do_get_robust_list (pid_t pid, struct robust_list_head ** head,
 {
     if (!head)
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct shim_thread * thread;
 

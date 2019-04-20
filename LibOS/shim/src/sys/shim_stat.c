@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_table.h>
 #include <shim_handle.h>
 #include <shim_fs.h>
@@ -41,6 +42,13 @@ int shim_do_stat (const char * file, struct stat * stat)
 
     if (!stat || test_user_memory(stat, sizeof(*stat), true))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret;
     struct shim_dentry * dent = NULL;
@@ -70,6 +78,13 @@ int shim_do_lstat (const char * file, struct stat * stat)
     if (!stat || test_user_memory(stat, sizeof(*stat), true))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     int ret;
     struct shim_dentry * dent = NULL;
 
@@ -96,6 +111,13 @@ int shim_do_fstat (int fd, struct stat * stat)
     if (!hdl)
         return -EBADF;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     int ret = -EACCES;
     struct shim_mount * fs = hdl->fs;
 
@@ -121,6 +143,13 @@ int shim_do_readlink (const char * file, char * buf, int bufsize)
 
     if (bufsize <= 0)
         return -EINVAL;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     int ret;
     struct shim_dentry * dent = NULL;
@@ -176,6 +205,13 @@ int shim_do_statfs (const char * path, struct statfs * buf)
     if (!path || test_user_string(path))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     int ret;
     struct shim_dentry * dent = NULL;
 
@@ -192,6 +228,13 @@ int shim_do_fstatfs (int fd, struct statfs * buf)
     struct shim_handle * hdl = get_fd_handle(fd, NULL, NULL);
     if (!hdl)
         return -EBADF;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     struct shim_mount * fs = hdl->fs;
     put_handle(hdl);

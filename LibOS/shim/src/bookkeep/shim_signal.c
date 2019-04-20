@@ -648,6 +648,12 @@ void append_signal (struct shim_thread * thread, int sig, siginfo_t * info,
     if (!signal)
         return;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     /* save in signal */
     if (info) {
         __store_info(info, signal);
@@ -674,6 +680,12 @@ void append_signal (struct shim_thread * thread, int sig, siginfo_t * info,
 static void sighandler_kill (int sig, siginfo_t * info, void * ucontext)
 {
     debug("killed by %s\n", signal_name(sig));
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     if (!info->si_pid)
         switch(sig) {

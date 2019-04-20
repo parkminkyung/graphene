@@ -187,6 +187,13 @@ static void __get_ipc_port (struct shim_ipc_port * pobj)
 
 static void __free_ipc_port (struct shim_ipc_port * pobj)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     if (pobj->pal_handle) {
         DkObjectClose(pobj->pal_handle);
         pobj->pal_handle = NULL;
@@ -381,6 +388,12 @@ static bool __del_ipc_port (struct shim_ipc_port * port, int type)
 {
     debug("deleting port %p (handle %p) for process %u\n",
           port, port->pal_handle, port->info.vmid);
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     __get_ipc_port(port); // Prevent the object from being freed during deletion
     assert(!list_empty(port, list)); // Never delete a port twice
@@ -725,6 +738,12 @@ int receive_ipc_message (struct shim_ipc_port * port, unsigned long seq,
     int expected_size;
     int bytes = 0, ret = 0;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     do {
         expected_size = IPC_MSG_MINIMAL_SIZE;
         while (bytes < expected_size) {
@@ -814,6 +833,12 @@ static void shim_ipc_helper (void * arg)
     struct shim_thread * self = (struct shim_thread *) arg;
     if (!arg)
         return;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     __libc_tcb_t tcb;
     allocate_tls(&tcb, false, self);
@@ -1094,6 +1119,12 @@ int exit_with_ipc_helper (bool handover, struct shim_thread ** ret)
     *ret = NULL;
     if (IN_HELPER() || ipc_helper_state != HELPER_ALIVE)
         return 0;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     lock(ipc_helper_lock);
     if (handover) {

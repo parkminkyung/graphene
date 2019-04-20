@@ -137,6 +137,12 @@ static void unset_ipc_info (struct shim_ipc_info * info)
 {
     qstrfree(&info->uri);
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     if (info->port)
         put_ipc_port(info->port);
 
@@ -368,6 +374,12 @@ int send_ipc_message (struct shim_ipc_msg * msg, struct shim_ipc_port * port)
 
     debug("send ipc message to port %p (handle %p)\n", port,
           port->pal_handle);
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
 
     int ret = DkStreamWrite(port->pal_handle, 0, msg->size, msg, NULL);
 

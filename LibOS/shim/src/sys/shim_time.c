@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_table.h>
 #include <shim_handle.h>
 #include <shim_fs.h>
@@ -45,6 +46,13 @@ int shim_do_gettimeofday (struct __kernel_timeval * tv,
     if (tz && test_user_memory(tz, sizeof(*tz), true))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     long time = DkSystemTimeQuery();
 
     if (time == -1)
@@ -65,6 +73,13 @@ time_t shim_do_time (time_t * tloc)
     if (tloc && test_user_memory(tloc, sizeof(*tloc), true))
         return -EFAULT;
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     time_t t = time / 1000000;
 
     if (tloc)
@@ -83,6 +98,13 @@ int shim_do_clock_gettime (clockid_t which_clock,
 
     if (test_user_memory(tp, sizeof(*tp), true))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     long time = DkSystemTimeQuery();
 

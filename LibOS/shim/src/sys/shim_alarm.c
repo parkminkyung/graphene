@@ -24,6 +24,7 @@
  */
 
 #include <shim_internal.h>
+#include <shim_ipc.h>
 #include <shim_table.h>
 #include <shim_thread.h>
 #include <shim_utils.h>
@@ -42,6 +43,14 @@ void signal_alarm (IDTYPE target, void * arg)
 
 int shim_do_alarm (unsigned int seconds)
 {
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
+
     uint64_t usecs = 1000000ULL * seconds;
     uint64_t usecs_left = install_async_event(NULL, usecs, &signal_alarm, NULL);
     // Alarm expects the number of seconds remaining.  Round up.
@@ -85,6 +94,13 @@ int shim_do_setitimer (int which, struct __kernel_itimerval * value,
         return -EFAULT;
     if (ovalue && test_user_memory(ovalue, sizeof(*ovalue), true))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     unsigned long setup_time = DkSystemTimeQuery();
 
@@ -131,6 +147,13 @@ int shim_do_getitimer (int which, struct __kernel_itimerval * value)
         return -EFAULT;
     if (test_user_memory(value, sizeof(*value), true))
         return -EFAULT;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+;//        return -ECANCELED;
+    }
+
 
     unsigned long setup_time = DkSystemTimeQuery();
 

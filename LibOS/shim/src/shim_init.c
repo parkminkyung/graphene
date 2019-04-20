@@ -673,7 +673,7 @@ int shim_init (int argc, void * args, void ** return_stack)
 {
     debug_handle = PAL_CB(debug_stream);
     cur_process.vmid = (IDTYPE) PAL_CB(process_id);
-    // cur_process.state = CREATED;
+    cur_process.state = CREATED;
 
     /* create the initial TCB, shim can not be run without a tcb */
     __libc_tcb_t tcb;
@@ -718,17 +718,11 @@ int shim_init (int argc, void * args, void ** return_stack)
 #endif
 
     BEGIN_PROFILE_INTERVAL();
-    debug("init_randgen\n");
     RUN_INIT(init_randgen);
-    debug("init_vma    \n");
     RUN_INIT(init_vma);
-    debug("init_slab   \n");
     RUN_INIT(init_slab);
-    debug("init_environ\n");
     RUN_INIT(read_environs, envp);
-    debug("init_strmgr \n");
     RUN_INIT(init_str_mgr);
-    debug("init_int_map\n");
     RUN_INIT(init_internal_map);
     debug("init_fs     \n");
     RUN_INIT(init_fs);
@@ -736,9 +730,6 @@ int shim_init (int argc, void * args, void ** return_stack)
     RUN_INIT(init_dcache);
     debug("init_handle \n");
     RUN_INIT(init_handle);
-    debug("init_db     \n");
-//    RUN_INIT(init_db);
-    debug("init_done   \n");
 
     debug("shim loaded at %p, ready to initialize\n", &__load_address);
 
@@ -963,7 +954,7 @@ static int open_file (const char * path, void * obj)
 
     return 0;
 }
-
+/*
 static int open_pal_handle (const char * uri, void * obj)
 {
     PAL_HANDLE hdl;
@@ -995,7 +986,7 @@ static int open_pal_handle (const char * uri, void * obj)
 
     return 0;
 }
-
+*/
 static int output_path (char * path, size_t size, const void * id,
                         struct shim_qstr * qstr)
 {
@@ -1036,7 +1027,7 @@ int create_file (const char * prefix, char * path, size_t size,
     return create_unique(&name_path, &open_file, &output_path, path, size,
                          &suffix, hdl, NULL);
 }
-
+/*
 int create_handle (const char * prefix, char * uri, size_t size,
                    PAL_HANDLE * hdl, unsigned int * id)
 {
@@ -1052,7 +1043,7 @@ int create_handle (const char * prefix, char * uri, size_t size,
     return create_unique(&name_path, &open_pal_handle, &output_path, uri, size,
                          id ? : &suffix, hdl, NULL);
 }
-
+*/
 void check_stack_hook (void)
 {
     struct shim_thread * cur_thread = get_cur_thread();
@@ -1171,7 +1162,7 @@ int shim_clean (void)
         }
 
         master_unlock();
-        DkObjectClose(hdl);
+        DkObjectClose(hdl); // it also calls ocall but i didn't confine it cause it is closing.. 
     }
 #endif
 
@@ -1186,7 +1177,7 @@ int shim_clean (void)
     DkProcessExit(cur_process.exit_code);
     return 0;
 }
-
+/*
 int message_confirm (const char * message, const char * options)
 {
     char answer;
@@ -1231,4 +1222,4 @@ out:
     DkObjectClose(hdl);
     master_unlock();
     return (ret < 0) ? ret : answer;
-}
+} */

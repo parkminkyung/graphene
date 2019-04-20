@@ -48,6 +48,12 @@ static int ipc_thread_exit (IDTYPE vmid, IDTYPE ppid, IDTYPE tid,
 
     struct shim_thread * thread = __lookup_thread(tid);
 
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     if (thread) {
         int ret = 0;
         //assert(thread->vmid == vmid && !thread->in_vm);
@@ -112,6 +118,13 @@ static int child_sthread_exit (struct shim_simple_thread * thread, void * arg,
                                bool * unlocked)
 {
     struct thread_info * info = (struct thread_info *) arg;
+
+    enum process_state proc_state = cur_process.state; 
+    if (proc_state == CONFINED){
+    	debug("%s:%d: confined.. should not be called \n", __FUNCTION__, __LINE__);
+    }
+
+
     if (thread->vmid == info->vmid) {
         if (thread->is_alive) {
             thread->exit_code = -info->exitcode;
